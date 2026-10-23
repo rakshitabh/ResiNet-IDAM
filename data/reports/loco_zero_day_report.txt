@@ -1,0 +1,54 @@
+RESINET-IDAM: LEAVE-ONE-CLASS-OUT (LOCO) ZERO-DAY EVALUATION REPORT
+======================================================================
+Classification: Synthetic Withheld-Class Zero-Day Experiment (LOCO)
+Status: Research Prototype Assessment
+
+1. PURPOSE & METHODOLOGY
+----------------------------------------------------------------------
+A standard 7-class supervised classifier forcibly assigns any unseen zero-day intrusion
+to one of its known classes. This experiment proves:
+(a) The closed-world misclassification failure mode of standard models.
+(b) The necessity and efficacy of the Out-of-Distribution (OOD) Anomaly Detection layer.
+
+2. EXPERIMENT 1: WITHHELD CLASS = 'Infiltration'
+----------------------------------------------------------------------
+- Closed-world forced assignment: {"Normal": 6}
+- Normal baseline False Positive Rate: 1.01%
+- Zero-Day Anomaly Detection Rate:      33.33%
+- Zero-Day ROC-AUC (Normal vs Novel):  0.8332
+
+3. EXPERIMENT 2: WITHHELD CLASS = 'Botnet ARES'
+----------------------------------------------------------------------
+- Closed-world forced assignment: {"Normal": 375}
+- Normal baseline False Positive Rate: 1.01%
+- Zero-Day Anomaly Detection Rate:      0.00%
+- Zero-Day ROC-AUC (Normal vs Novel):  0.5562
+
+4. SCIENTIFIC FINDINGS & HONEST ZERO-DAY LIMITATIONS
+----------------------------------------------------------------------
+1. Closed-World Failure Mode:
+   When an unseen attack is presented to a supervised Random Forest, it forcibly misclassifies
+   100.0% of unseen Infiltration and 100.0% of unseen Botnet ARES flows as 'Normal'.
+   Supervised classification on closed label sets provides ZERO protection against unseen threats.
+
+2. Detection Failure on Distribution-Overlapping Attacks (Botnet ARES):
+   - Withheld Botnet ARES Detection Rate: 0.00% (0 / 375 detected)
+   - ROC-AUC: 0.5562 (Near random guessing)
+   - Reason: In tabular flow feature space (packet lengths, inter-arrival times), low-rate
+     Botnet C2 flows closely mimic legitimate keepalive and periodic web polling traffic.
+     An unsupervised density estimator (Isolation Forest) trained purely on normal network flows
+     cannot distinguish Botnet ARES from normal traffic without DNS domain reputation,
+     payload inspection, or host telemetry.
+
+3. Partial Detection on High-Deviation Attacks (Infiltration):
+   - Withheld Infiltration Detection Rate: 33.33% (2 / 6 detected at 1.01% FPR)
+   - ROC-AUC: 0.8332
+   - Reason: Infiltration involves atypical port scanning and privilege escalation flow dynamics
+     that display greater statistical divergence from the normal baseline.
+
+4. Objective Conclusion:
+   The current framework DOES NOT possess general zero-day intrusion detection capability.
+   While it shows moderate sensitivity to high-deviation anomalies (Infiltration), it is completely
+   blind to subtle, distribution-overlapping threats like Botnet ARES (0.00% detection).
+   Zero-day detection cannot be claimed without integrating host-level telemetry and protocol-aware
+   sequence modeling.

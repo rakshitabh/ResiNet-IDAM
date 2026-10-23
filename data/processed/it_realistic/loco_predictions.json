@@ -1,0 +1,50 @@
+{
+  "Configuration A (All 79 Features) | Infiltration": {
+    "supervised_preds": {
+      "Normal": 6
+    },
+    "tau_frozen": 0.6447216350959426,
+    "val_fpr": 1.002865329512894,
+    "test_fpr": 1.0502195913691046,
+    "anomaly_recall": 33.33333333333333,
+    "precision": 0.03508771929824561,
+    "f1": 0.06349206349206349,
+    "roc_auc": 0.7961937496021896
+  },
+  "Configuration A (All 79 Features) | Botnet ARES": {
+    "supervised_preds": {
+      "Normal": 375
+    },
+    "tau_frozen": 0.6447216350959426,
+    "val_fpr": 1.002865329512894,
+    "test_fpr": 1.0502195913691046,
+    "anomaly_recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.5587445738654446
+  },
+  "Configuration B (77 Features - No Ports) | Infiltration": {
+    "supervised_preds": {
+      "Normal": 6
+    },
+    "tau_frozen": 0.6449220785739788,
+    "val_fpr": 1.002865329512894,
+    "test_fpr": 1.2793584113041818,
+    "anomaly_recall": 33.33333333333333,
+    "precision": 0.028985507246376812,
+    "f1": 0.05333333333333334,
+    "roc_auc": 0.7915791483673859
+  },
+  "Configuration B (77 Features - No Ports) | Botnet ARES": {
+    "supervised_preds": {
+      "Normal": 375
+    },
+    "tau_frozen": 0.6449220785739788,
+    "val_fpr": 1.002865329512894,
+    "test_fpr": 1.2793584113041818,
+    "anomaly_recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.5236132645916873
+  }
+}

@@ -17,6 +17,10 @@ __pycache__/
 # Original datasets
 data/raw/
 
+# Large processed training datasets (>100MB GitHub limit)
+data/processed/hai-train-features.csv
+data/processed/hai-train-scaled.csv
+
 # Trained models and generated thresholds
 models/
 
@@ -24,6 +28,10 @@ models/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local SQLite databases and logs
+*.db
+*.log
 
 # IT datasets and generated reports
 data/it/

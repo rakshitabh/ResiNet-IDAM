@@ -1,0 +1,16 @@
+{
+  "dataset_type": "Synthetic Cyber-Physical Evaluation Benchmark (Version 1.0)",
+  "ot_source": "hai-test-scaled.csv",
+  "it_source": "it_test.npz",
+  "cutoff_timestamp": "2022-08-12 23:35:15",
+  "total_records": 54000,
+  "validation_records": 27314,
+  "test_records": 26686,
+  "scenarios": {
+    "Scenario_A_Correlated": "IT network precursor followed by OT setpoint manipulation",
+    "Scenario_B_Stealth_Infil": "IT Infiltration flow paired with physical process drift",
+    "Scenario_C_Isolated_IT": "IT DoS/Web Attack with normal physical plant operation",
+    "Scenario_D_Isolated_OT": "Physical sensor/actuator anomaly with normal IT traffic",
+    "Normal": "Normal IT network flow and normal OT process"
+  }
+}

@@ -1,0 +1,109 @@
+RESINET-IDAM: HONEST IT-OT INTEGRATION EVALUATION REPORT
+======================================================================
+Status: Verified Research Prototype Evaluation (No Synthetic ZT Leakage)
+Evaluation Partition: 26,686 out-of-sample records chronologically isolated.
+
+PRIMARY LIMITATION:
+In this prototype, IT network flows from IDS2025 and OT sensor readings from HAI
+are synthetically paired. Genuine cross-domain intrusion detection cannot be
+empirically validated until synchronized, time-aligned IT-OT telemetry is available.
+
+1. METHODOLOGY & LEAKAGE CORRECTION
+----------------------------------------------------------------------
+- The synthetic 'zt_context' feature has been COMPLETELY REMOVED from training.
+- The single-decision fusion model has been replaced with THREE INDEPENDENT CHANNELS:
+  1. R_IT(t):  Enterprise IT attack probability from Random Forest
+  2. R_OT(t):  Physical anomaly score from OT Autoencoder reconstruction
+  3. R_CP(t):  Cross-domain cyber-physical correlation model
+- Coefficients fitted on VALIDATION data without ZT:
+  alpha (IT Weight):       6.5199
+  beta (OT Weight):        4.7116
+  mu (Interaction Weight): -0.0324
+  Intercept:               -7.9211
+  Validation Thresholds:   tau_it = 0.50, tau_ot = 0.50, tau_cp = 0.3600
+
+2. UNBIASED TEST PERFORMANCE ON CYBER-PHYSICAL ATTACK DETECTION
+----------------------------------------------------------------------
+Evaluating detection of correlated attacks (Ground Truth: Scenarios A & B):
+
+Metric                 IT-Only Alert   OT-Only Alert   Linear(0.5/0.5)  Trained R_CP
+Accuracy:                94.99%           92.51%           95.88%            95.97%
+Precision:                0.4559           0.1234           0.5058            0.5644
+Recall:                   0.9796           0.1271           0.9671            0.1947
+Attack F1-Score:          0.6222           0.1252           0.6642            0.2895
+False Positive Rate:      5.14%            3.97%            4.16%             0.66%
+False Positives (FP):   1315            1016            1063              169            
+False Negatives (FN):   23              982             37                906            
+
+KEY FINDING:
+Without the leaked ZT feature, R_CP achieves F1 = 28.95%.
+The previously reported 99.29% F1 was entirely driven by target leakage in zt_context.
+The current score accurately reflects the reality of combining a high-accuracy IT classifier
+with an OT Autoencoder that has ~46% baseline recall and high false positives.
+
+3. SCENARIO-BY-SCENARIO MULTI-CHANNEL AUDIT
+----------------------------------------------------------------------
+Scenario: Normal (Total: 24445 records)
+  - IT Channel Alerts:          329 (  1.3%)
+  - OT Channel Alerts:          965 (  3.9%)
+  - Cyber-Physical Alerts:       20 (  0.1%)
+  - Triaged Tier 4 (CP):         21 (  0.1%)
+  - Triaged Tier 2 (OT):        952 (  3.9%)
+  - Triaged Tier 2 (IT):        308 (  1.3%)
+  - Any Alert Triggered:       1281 (  5.2%)
+
+Scenario: Scenario_A_Correlated (Total: 1069 records)
+  - IT Channel Alerts:         1069 (100.0%)
+  - OT Channel Alerts:          130 ( 12.2%)
+  - Cyber-Physical Alerts:      210 ( 19.6%)
+  - Triaged Tier 4 (CP):        210 ( 19.6%)
+  - Triaged Tier 2 (OT):          0 (  0.0%)
+  - Triaged Tier 2 (IT):        859 ( 80.4%)
+  - Any Alert Triggered:       1069 (100.0%)
+
+Scenario: Scenario_B_Stealth_Infil (Total: 56 records)
+  - IT Channel Alerts:           33 ( 58.9%)
+  - OT Channel Alerts:           13 ( 23.2%)
+  - Cyber-Physical Alerts:        9 ( 16.1%)
+  - Triaged Tier 4 (CP):          9 ( 16.1%)
+  - Triaged Tier 2 (OT):          5 (  8.9%)
+  - Triaged Tier 2 (IT):         24 ( 42.9%)
+  - Any Alert Triggered:         38 ( 67.9%)
+
+Scenario: Scenario_C_Isolated_IT (Total: 984 records)
+  - IT Channel Alerts:          984 (100.0%)
+  - OT Channel Alerts:           41 (  4.2%)
+  - Cyber-Physical Alerts:      149 ( 15.1%)
+  - Triaged Tier 4 (CP):        149 ( 15.1%)
+  - Triaged Tier 2 (OT):          0 (  0.0%)
+  - Triaged Tier 2 (IT):        835 ( 84.9%)
+  - Any Alert Triggered:        984 (100.0%)
+
+Scenario: Scenario_D_Isolated_OT (Total: 132 records)
+  - IT Channel Alerts:            2 (  1.5%)
+  - OT Channel Alerts:           10 (  7.6%)
+  - Cyber-Physical Alerts:        0 (  0.0%)
+  - Triaged Tier 4 (CP):          0 (  0.0%)
+  - Triaged Tier 2 (OT):         10 (  7.6%)
+  - Triaged Tier 2 (IT):          2 (  1.5%)
+  - Any Alert Triggered:         12 (  9.1%)
+
+4. VERIFICATION OF SCENARIO D (ISOLATED OT PHYSICAL ATTACK)
+----------------------------------------------------------------------
+- In Scenario D, physical sensor manipulation occurred without IT network precursors.
+- Result under previous single fusion model: 0% flagged (132/132 attacks silently missed).
+- Result under Triaged Multi-Channel model:
+  * IT Channel Alerts: 2 (Correct: no network attack occurred).
+  * OT Channel Alerts: 10 / 132 triggered.
+  * Triage Action: Dispatched as Tier-2 Plant Engineering Alert without requiring IT corroboration.
+  * Limitation: The OT Autoencoder missed 122 records due to its baseline physical reconstruction threshold.
+
+5. SCIENTIFIC CONCLUSIONS & RESEARCH LIMITATIONS
+----------------------------------------------------------------------
+1. Synthetic IT-OT Pairing Limitation: Because IDS2025 and HAI data were captured on
+   separate testbeds at different times, cross-domain pairing is synthetic. Genuine
+   multi-stage cyber-physical correlation cannot be validated without time-aligned telemetry.
+2. Honest Metrics: The cross-domain correlation model achieves F1 = 28.95%,
+   reflecting true physical sensor and network flow limitations without shortcut features.
+3. Multi-Channel Triage: Separate IT and OT channels are mandatory so isolated attacks
+   are not suppressed by lack of cross-domain corroboration.
