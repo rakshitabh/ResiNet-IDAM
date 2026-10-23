@@ -26,6 +26,10 @@ models/*
 !models/it_realistic/
 models/it_realistic/*
 !models/it_realistic/random_forest_all.joblib
+!models/it_realistic/random_forest_no_ports.joblib
+!models/it_realistic/loco_iforest_all_botnet_ares.joblib
+!models/it_realistic/loco_iforest_no_ports_botnet_ares.joblib
+!models/it_realistic/label_encoder.joblib
 
 # Editor and OS files
 .vscode/
@@ -39,7 +43,8 @@ Thumbs.db
 # IT datasets and generated reports
 data/it/
 dataset/raw/
-reports/it/
+reports/it/*
+!reports/it/ids2025_zero_trust_results.csv
 
 # Local backup
 app_backup.py
