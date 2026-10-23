@@ -6,3 +6,4 @@ tensorflow==2.21.0
 
 streamlit
 pytest
+plotly
