@@ -89,11 +89,63 @@ The technologies used or planned for the project include:
 
 Detailed instructions for setting up and running the current OT implementation are available in:
 
-- **[OT Setup and Usage Guide](OT_SETUP.md)**
+- **[OT Setup and Usage Guide](docs/OT_SETUP.md)**
+- **[Master Blueprint](docs/master-blueprint.md)**
+- **[Implementation Plan](docs/implementation_plan.md)**
+- **[Dataset Validation Report](docs/dataset-report.md)**
+- **[Model Evaluation Report](docs/model-evaluation.md)**
+- **[Simulated Risk Policy](docs/risk-policy.md)**
+- **[API Contract](docs/api-contract.md)**
+- **[Integration Test Report](docs/integration-test-report.md)**
+- **[Demonstration Guide](docs/demonstration-guide.md)**
 
 The guide covers environment setup, dataset requirements, preprocessing, model training, evaluation, and troubleshooting.
 
-## 8. Research and Evaluation
+## 8. Dataset Audit
+
+Run the Phase 1 audit before training or evaluating a model:
+
+```powershell
+python src/data/inspect_dataset.py
+python src/data/validate_dataset.py
+```
+
+The commands write machine-readable reports to `reports/`. The validation report explicitly records whether the
+training file, scaler artifact, feature ordering, timestamps, labels, and finite-value checks are available and valid.
+Training must not proceed until the normal-only training assumption and scaler provenance are verified.
+
+## 9. Local dashboard
+
+Start the API and dashboard in separate terminals:
+
+PowerShell:
+
+```powershell
+.\.venv-ae\Scripts\python.exe -m uvicorn src.api.main:app --reload
+Set-Location frontend
+npm install
+npm run dev
+```
+
+Command Prompt:
+
+```bat
+cd /d D:\resinet-idam\ResiNet-IDAM
+.\.venv-ae\Scripts\python.exe -m uvicorn src.api.main:app --reload
+```
+
+In a second Command Prompt window:
+
+```bat
+cd /d D:\resinet-idam\ResiNet-IDAM\frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. The React dashboard provides overview, event explorer, event detail, and measured model
+evaluation views. Identity, device, and asset trust context is explicitly simulated.
+
+## 10. Research and Evaluation
 
 The current OT experiments use the HAI industrial telemetry dataset to investigate anomaly detection with Isolation Forest and an autoencoder.
 
@@ -101,7 +153,7 @@ Evaluation includes attack precision, attack recall, attack F1-score, false posi
 
 The current results are preliminary and specific to the implemented experiments. They do not independently establish reliable zero-day detection or validate the complete IT-OT and Zero Trust framework.
 
-## 9. Project Limitations
+## 10. Project Limitations
 
 - The current implementation focuses on the OT anomaly-detection component.
 - The full IT-OT integration and Zero Trust framework remain to be implemented and evaluated.
@@ -109,7 +161,7 @@ The current results are preliminary and specific to the implemented experiments.
 - Further controlled experiments are needed to evaluate generalization to previously unseen attacks.
 - Detection thresholds, preprocessing, and evaluation procedures must be validated carefully to avoid test-data leakage.
 
-## 10. Repository Structure
+## 11. Repository Structure
 
 ```text
 ResiNet-IDAM/
@@ -135,7 +187,7 @@ ResiNet-IDAM/
 
 The repository structure may evolve as additional components are developed. Large datasets and generated model binaries are not necessarily stored in Git.
 
-## 11. Research Goal
+## 12. Research Goal
 
 The long-term goal of ResiNet-IDAM is to investigate how anomaly detection, contextual risk assessment, and Zero Trust principles can work together to improve security monitoring across interconnected IT and OT environments.
 

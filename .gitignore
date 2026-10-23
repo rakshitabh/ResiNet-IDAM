@@ -29,6 +29,10 @@ Thumbs.db
 data/it/
 dataset/raw/
 reports/it/
+data/*.sqlite3
+frontend/node_modules/
+frontend/dist/
 
 # Local backup
 app_backup.py
+data/processed/ 

@@ -310,9 +310,13 @@ The current training implementation saves the following artifacts:
 
 models/
 
-├── ot\_autoencoder.keras
+├── autoencoder.keras
 
-└── autoencoder\_threshold.json
+├── feature_columns.json
+
+├── training_config.json
+
+└── anomaly_threshold.json
 
 ```
 
@@ -323,6 +327,9 @@ The threshold is derived from reconstruction errors on a chronological validatio
 
 
 Training may take time depending on the hardware and TensorFlow configuration.
+
+The current supported baseline environment is Python 3.13 with TensorFlow 2.21.0. TensorFlow 2.21.0 does not
+provide a wheel for Python 3.14 on this Windows setup.
 
 
 
@@ -473,6 +480,5 @@ The following remain separate integration tasks:
 
 
 The HAI benchmark results should not be interpreted as proof of production readiness or generalization to all zero-day attacks.
-
 
 
