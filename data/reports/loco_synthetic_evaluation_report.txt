@@ -1,0 +1,149 @@
+RESINET-IDAM: LEAVE-ONE-CLASS-OUT (LOCO) SYNTHETIC EVALUATION REPORT
+======================================================================
+Evaluation Date: 2026-10-23
+Methodology: Synthetic Held-Out-Class Leave-One-Class-Out (LOCO)
+Model Set:
+  - Supervised: RandomForestClassifier(n_estimators=200, class_weight="balanced", random_state=42, n_jobs=2)
+  - Anomaly Detector: IsolationForest(n_estimators=100, contamination=0.01, random_state=42, n_jobs=2)
+Calibration Protocol:
+  - Isolation Forest fit on earlier 80% of Normal training flows (16,748 flows).
+  - Threshold tau calibrated on later 20% of Normal training flows (4,188 flows) at 99th percentile.
+  - Tau is frozen prior to evaluating on untouched test partitions.
+
+PRIMARY SCIENTIFIC DISCLAIMER:
+A held-out attack class from a known benchmark dataset (IDS2025.xlsx) does NOT
+constitute a true real-world zero-day intrusion. The capture conditions, network topology,
+host configurations, and monitoring instrumentation remain constant between training and testing.
+This experiment must be interpreted strictly as a synthetic held-out-class evaluation.
+
+======================================================================
+1. SUMMARY COMPARISON TABLE
+======================================================================
+Feature Configuration    Withheld Class   Test N  Supervised -> Normal  Anomaly Recall  Test FPR  Precision  F1      ROC-AUC
+------------------------------------------------------------------------------------------------------------------------
+Configuration A (All 79 Features) Infiltration          6  100.00% (  6/  6)      33.33% (  2/  6)   1.05%   0.0351     0.0635  0.7962
+Configuration A (All 79 Features) Botnet ARES         375  100.00% (375/375)       0.00% (  0/375)   1.05%   0.0000     0.0000  0.5587
+Configuration B (77 Features - No Ports) Infiltration          6  100.00% (  6/  6)      33.33% (  2/  6)   1.28%   0.0290     0.0533  0.7916
+Configuration B (77 Features - No Ports) Botnet ARES         375  100.00% (375/375)       0.00% (  0/375)   1.28%   0.0000     0.0000  0.5236
+------------------------------------------------------------------------------------------------------------------------
+
+2. DETAILED EXPERIMENTAL BREAKDOWN
+----------------------------------------------------------------------
+
+[EXPERIMENT] Configuration A (All 79 Features) | Withheld: 'Infiltration'
+----------------------------------------------------------------------
+A. Sample Support & Uncertainty Qualification:
+   - Training Samples Withheld: 23
+   - Test Samples Evaluated:    6
+   - SAMPLE SIZE WARNING: With only N=6 test instances, Infiltration metrics are highly uncertain.
+     Each instance accounts for 16.67% of the total score, producing wide binomial confidence intervals (+/-35%).
+     Results must be treated as indicative and anecdotal rather than statistically definitive.
+
+B. Closed-World Supervised Model (N-1 Classes):
+   - Training Set: 73377 flows (excluded all 23 training instances of Infiltration)
+   - Forced Predicted Class Distribution on Unseen Attack:
+       • Assigned to 'Normal': 6 / 6 (100.00%)
+   - Silent Bypass Rate (Classified as 'Normal'): 100.00% (6 / 6)
+
+C. Anomaly Detection Layer (Isolation Forest on Normal Baseline):
+   - Normal Fit Partition:       16748 flows (earlier 80% of normal training data)
+   - Normal Validation Partition: 4188 flows (later 20% of normal training data)
+   - Frozen Threshold (tau):     0.644722
+   - Validation FPR:             1.00% (approximate 1.0% target)
+   - Test FPR on Normal:         1.05% (55 / 5237 normal flows falsely flagged)
+   - Held-Out Attack Recall:     33.33% (2 / 6 detected)
+   - Precision:                  0.0351
+   - F1-Score:                   0.0635
+   - Discrimination ROC-AUC:     0.7962
+
+[EXPERIMENT] Configuration A (All 79 Features) | Withheld: 'Botnet ARES'
+----------------------------------------------------------------------
+A. Sample Support & Uncertainty Qualification:
+   - Training Samples Withheld: 1498
+   - Test Samples Evaluated:    375
+
+B. Closed-World Supervised Model (N-1 Classes):
+   - Training Set: 71902 flows (excluded all 1498 training instances of Botnet ARES)
+   - Forced Predicted Class Distribution on Unseen Attack:
+       • Assigned to 'Normal': 375 / 375 (100.00%)
+   - Silent Bypass Rate (Classified as 'Normal'): 100.00% (375 / 375)
+
+C. Anomaly Detection Layer (Isolation Forest on Normal Baseline):
+   - Normal Fit Partition:       16748 flows (earlier 80% of normal training data)
+   - Normal Validation Partition: 4188 flows (later 20% of normal training data)
+   - Frozen Threshold (tau):     0.644722
+   - Validation FPR:             1.00% (approximate 1.0% target)
+   - Test FPR on Normal:         1.05% (55 / 5237 normal flows falsely flagged)
+   - Held-Out Attack Recall:     0.00% (0 / 375 detected)
+   - Precision:                  0.0000
+   - F1-Score:                   0.0000
+   - Discrimination ROC-AUC:     0.5587
+
+[EXPERIMENT] Configuration B (77 Features - No Ports) | Withheld: 'Infiltration'
+----------------------------------------------------------------------
+A. Sample Support & Uncertainty Qualification:
+   - Training Samples Withheld: 23
+   - Test Samples Evaluated:    6
+   - SAMPLE SIZE WARNING: With only N=6 test instances, Infiltration metrics are highly uncertain.
+     Each instance accounts for 16.67% of the total score, producing wide binomial confidence intervals (+/-35%).
+     Results must be treated as indicative and anecdotal rather than statistically definitive.
+
+B. Closed-World Supervised Model (N-1 Classes):
+   - Training Set: 73377 flows (excluded all 23 training instances of Infiltration)
+   - Forced Predicted Class Distribution on Unseen Attack:
+       • Assigned to 'Normal': 6 / 6 (100.00%)
+   - Silent Bypass Rate (Classified as 'Normal'): 100.00% (6 / 6)
+
+C. Anomaly Detection Layer (Isolation Forest on Normal Baseline):
+   - Normal Fit Partition:       16748 flows (earlier 80% of normal training data)
+   - Normal Validation Partition: 4188 flows (later 20% of normal training data)
+   - Frozen Threshold (tau):     0.644922
+   - Validation FPR:             1.00% (approximate 1.0% target)
+   - Test FPR on Normal:         1.28% (67 / 5237 normal flows falsely flagged)
+   - Held-Out Attack Recall:     33.33% (2 / 6 detected)
+   - Precision:                  0.0290
+   - F1-Score:                   0.0533
+   - Discrimination ROC-AUC:     0.7916
+
+[EXPERIMENT] Configuration B (77 Features - No Ports) | Withheld: 'Botnet ARES'
+----------------------------------------------------------------------
+A. Sample Support & Uncertainty Qualification:
+   - Training Samples Withheld: 1498
+   - Test Samples Evaluated:    375
+
+B. Closed-World Supervised Model (N-1 Classes):
+   - Training Set: 71902 flows (excluded all 1498 training instances of Botnet ARES)
+   - Forced Predicted Class Distribution on Unseen Attack:
+       • Assigned to 'Normal': 375 / 375 (100.00%)
+   - Silent Bypass Rate (Classified as 'Normal'): 100.00% (375 / 375)
+
+C. Anomaly Detection Layer (Isolation Forest on Normal Baseline):
+   - Normal Fit Partition:       16748 flows (earlier 80% of normal training data)
+   - Normal Validation Partition: 4188 flows (later 20% of normal training data)
+   - Frozen Threshold (tau):     0.644922
+   - Validation FPR:             1.00% (approximate 1.0% target)
+   - Test FPR on Normal:         1.28% (67 / 5237 normal flows falsely flagged)
+   - Held-Out Attack Recall:     0.00% (0 / 375 detected)
+   - Precision:                  0.0000
+   - F1-Score:                   0.0000
+   - Discrimination ROC-AUC:     0.5236
+
+3. SCIENTIFIC FINDINGS & CORE LIMITATIONS
+----------------------------------------------------------------------
+1. Closed-World Supervised Vulnerability:
+   When an unseen attack is presented to a closed-world supervised Random Forest, it is forcibly
+   misclassified into known categories. A significant portion of novel attacks are silently misclassified
+   as 'Normal', illustrating that supervised models alone provide zero proactive defense against novel threats.
+
+2. Distribution-Overlapping Attacks (Botnet ARES):
+   Across both Configuration A and Configuration B, the anomaly detector exhibits near-zero detection
+   for Botnet ARES (ROC-AUC ~0.51 to 0.55). Because low-rate botnet beaconing packets closely resemble
+   standard periodic HTTP/DNS keepalives in tabular flow features, density-based anomaly detectors
+   trained purely on benign flows cannot distinguish them without host, payload, or domain context.
+
+3. Stealth / Atypical Attacks (Infiltration):
+   Infiltration exhibits higher anomaly scores due to unusual port scanning and privilege escalation
+   patterns. However, with only N=6 test instances, this finding cannot be generalized.
+
+4. Baseline Preservation:
+   All original V1.0 reports, baseline models, and the 7-class contiguous benchmark remain unchanged.
