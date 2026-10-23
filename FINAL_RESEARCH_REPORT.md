@@ -1,4 +1,4 @@
-# ResiNet-IDAM: Final Research & Baseline Evaluation Report
+# ResiNet-IDAM: Comprehensive Research & Evaluation Report
 
 ## Adaptive Deep Learning and Zero-Trust Framework for Detecting Zero-Day Intrusions in IT-OT Hybrid Critical Infrastructures
 
@@ -6,22 +6,32 @@
 
 ## 1. Executive Summary & Research Prototype Status
 
-The ResiNet-IDAM project investigates hybrid cyber-physical security by combining Information Technology (IT) network intrusion detection with Operational Technology (OT) physical anomaly detection, correlated under Zero-Trust architectural principles.
+The **ResiNet-IDAM** framework investigates multi-stage cyber-physical security by combining Information Technology (IT) network intrusion detection with Operational Technology (OT) physical telemetry anomaly detection, correlated under Zero-Trust architectural principles.
 
-### Frozen Baseline Classification
+### Dual-Phase Evaluation Architecture
+This report documents both the **frozen V1.0 random-split baseline** and the **realistic out-of-burst evaluation**:
+1. **Frozen Baseline Reference (V1.0):** Preserved as a historical reference point evaluated on random stratified splits (99.56% IT accuracy; 28.95% real cyber-physical fusion F1 without synthetic shortcuts).
+2. **Realistic 7-Class Benchmark:** Evaluated on a contiguous sequential block split (row-order temporal proxy) comparing **Configuration A** (all 79 features) against **Configuration B** (77 features, source/destination ports removed).
+3. **Synthetic Held-Out-Class Evaluation (LOCO):** Separate Leave-One-Class-Out evaluation measuring closed-world supervised failure modes and unsupervised anomaly detection on withheld attack classes (`Infiltration` and `Botnet ARES`).
+
 > [!IMPORTANT]
-> The current models, datasets, and scripts are formally **frozen as Research Prototype Version 1.0**. 
-> All reported metrics reflect rigorous out-of-sample testing without synthetic shortcut features. Real cross-domain intrusion detection cannot be definitively proven until empirical, genuinely time-aligned IT and OT telemetry is captured concurrently on a unified hybrid testbed.
+> **Dataset-Specific Scope & Experimental Constraints:**
+> - All reported conclusions are **strictly dataset-specific** to `IDS2025` (IT NetFlow) and `HAI 21.03` (OT water treatment testbed).
+> - The contiguous split acts as a **row-order temporal proxy** to prevent intra-burst interpolation, but cannot be claimed as a verified campaign-independent or zero-day test because original timestamps, flow IDs, and host metadata are absent from `IDS2025.xlsx`.
+> - Held-out class experiments represent **synthetic held-out-class evaluations**, not genuine zero-day intrusion detection.
+> - IT and OT datasets were recorded on separate testbeds and are **synthetically paired**; real-world multi-stage cross-domain correlation requires concurrently recorded physical testbed telemetry.
 
 ---
 
-## 2. Summary of Key Experimental Benchmarks
+## 2. Frozen Baseline Reference (V1.0 Summary)
+
+The original prototype metrics are preserved below as a baseline reference. These models used random stratified 80/20 splitting.
 
 | Component / Evaluation Dimension | Primary Metric | Supporting Metrics & Findings | Status |
 |---|---|---|---|
-| **IT Standalone Baseline (Random Forest)** | **99.56% Accuracy** | Macro F1: **96.76%**; Infiltration Recall: **66.67%** (4/6 caught) | Frozen Baseline |
-| **OT Standalone Baseline (Autoencoder)** | **92.27% Accuracy** | Attack Precision: **34.92%**; Attack Recall: **46.39%**; F1: **39.84%** (1,598 missed attacks) | Frozen Baseline |
-| **OT Baseline (Isolation Forest)** | **65.86% Accuracy** | Attack Precision: **10.49%**; Attack Recall: **68.80%**; F1: **18.20%** (17,506 false alarms) | Frozen Baseline |
+| **IT Standalone Baseline (Random Forest)** | **99.56% Accuracy** | Macro F1: **96.76%**; Infiltration Recall: **66.67%** (4/6 caught) | Frozen Baseline Reference |
+| **OT Standalone Baseline (Autoencoder)** | **92.27% Accuracy** | Attack Precision: **34.92%**; Attack Recall: **46.39%**; F1: **39.84%** (1,598 missed attacks) | Frozen Baseline Reference |
+| **OT Baseline (Isolation Forest)** | **65.86% Accuracy** | Attack Precision: **10.49%**; Attack Recall: **68.80%**; F1: **18.20%** (17,506 false alarms) | Frozen Baseline Reference |
 | **Cross-Domain Correlation ($R_{\text{CP}}$)** | **28.95% Attack F1** | Precision: **56.44%**; Recall: **19.47%**; FPR: **0.66%** (Without synthetic shortcuts) | Verified Prototype |
 | **Scenario D Physical Attacks Caught** | **7.6% (10 / 132)** | **122 physical attacks missed** by OT Autoencoder threshold; zero alert suppression | Audited & Triaged |
 | **Unseen Botnet ARES Zero-Day Detection** | **0.00% (0 / 375)** | ROC-AUC: **0.5562** (Unsupervised flow density estimation fails on C2 overlap) | Verified & Reproducible |
@@ -29,152 +39,154 @@ The ResiNet-IDAM project investigates hybrid cyber-physical security by combinin
 
 ---
 
-## 3. IT Dataset Leakage & Train/Test Split Realism Audit
+## 3. Realistic IT Benchmark Evaluation (Contiguous Sequential Split)
 
-An empirical audit of `data/processed/it/` was conducted to investigate data leakage, shortcut learning, and the validity of the stratified 80/20 train/test split.
+To address intra-burst point-wise interpolation and port shortcut memorization, a contiguous 80/20 sequential split was implemented on `data/raw/IDS2025.xlsx` across its 79 contiguous label blocks (earlier 80% to train: 73,400 rows; later 20% to test: 18,344 rows). Imputation and standardization were strictly fitted on training data only.
 
-### 3.1 Feature Shortcut Learning
-Single-feature decision trees (depth = 4) were trained on individual flow features to measure how much label information is concentrated in single columns:
-* **`Destination Port` alone: `88.15%` accuracy across all 7 classes.**
-* **`Packet Length Mean` alone: `82.08%` accuracy.**
-* **`Init_Win_bytes_forward` alone: `72.19%` accuracy.**
-* **`Flow Duration` alone: `65.05%` accuracy.**
+### 3.1 Benchmark Comparison Table
+*Model: `RandomForestClassifier(n_estimators=200, class_weight="balanced", random_state=42, n_jobs=2)`*
 
-*Finding:* In benchmark flow datasets, attack scripts frequently bind to fixed destination ports or produce identical packet buffers. Models can achieve high accuracy by memorizing port numbers or packet sizes rather than learning generalizable network behavior.
+| Metric | Frozen Baseline Reference\*<br>*(Random Stratified, 79 Feats)* | Configuration A<br>*(Contiguous, All 79 Feats)* | Configuration B<br>*(Contiguous, No Ports - 77 Feats)* |
+| :--- | :---: | :---: | :---: |
+| **Number of Features** | 79 | 79 | **77** |
+| **Split Protocol** | Random Stratified (Interpolation) | Contiguous Sequential 80/20 | Contiguous Sequential 80/20 |
+| **Overall Test Accuracy** | 99.56% | **99.58%** | **98.66%** |
+| **Macro F1-Score** | 96.76% | **96.82%** | **95.63%** |
+| **Weighted F1-Score** | 99.56% | **99.58%** | **98.66%** |
+| **Benign FPR** (`Normal` = Negative) | 0.15% | **1.30%** (68 / 5,237) | **3.67%** (192 / 5,237) |
+| **Attack FNR** (Missed as `Normal`) | 0.44% | **0.06%** (8 / 13,107) | **0.40%** (52 / 13,107) |
+| **Exact Feature Overlap Vectors** | 0 rows | 1 row | **824 unique vectors** (7,080 test rows) |
 
-### 3.2 Near-Duplicate Flow Leakage
-Euclidean nearest-neighbor distance was measured between the test partition (5,000 samples) and the training partition (25,000 samples):
-* **Median distance to nearest training flow:** **`0.0500`**
-* **Test flows with virtually identical training vectors (dist < 0.05):** **`49.96%`**
-* **Test flows with close training vectors (dist < 0.50):** **`90.66%`**
-* **Class label match rate of nearest training flow:** **`98.28%`**
+*\*Note: The frozen baseline is an illustrative reference point, not a directly equivalent test, due to fundamental differences in split protocols.*
 
-*Finding:* While [check_it_overlap.py](file:///c:/ResiNet-IDAM/src/check_it_overlap.py) confirmed zero exact byte-for-byte duplicates, **nearly half of the test flows are near-duplicate vectors** of training flows. 
+### 3.2 Classification Reports & Confusion Matrices
 
-### 3.3 Realism of the Random Stratified Split
-In operational environments, network flows are generated in continuous bursts and stateful sessions. The current random stratified 80/20 split draws individual flows independently across the entire dataset. Consequently, flows belonging to the same burst or IP session appear in both training and testing sets, artificially inflating closed-world test accuracy to 99.56%. A realistic evaluation requires **group-based or temporal splitting** by capture session or day.
-
----
-
-## 4. OT Dataset Distribution & Preprocessing Pipeline Audit
-
-### 4.1 Attack Distribution in HAI Testbed Telemetry
-* **Total Duration:** 54,000 records sampled at strictly 1.0 Hz (15 hours).
-* **Class Imbalance:** 51,019 Normal seconds (**94.48%**) vs. 2,981 Attack seconds (**5.52%**).
-* **Continuous Attack Blocks:** **14 distinct physical attack events**:
-  * Minimum Duration: **56 seconds**
-  * Median Duration: **159.5 seconds**
-  * Maximum Duration: **628 seconds**
-* Attacks manipulate physical setpoints (`x1001_05_SETPOINT_OUT`), water levels, pump speeds, and valve actuators.
-
-### 4.2 Preprocessing Pipeline Audit
-* **Feature Pruning:** Of the 86 raw process channels, **20 static/constant columns were dropped** (e.g., `P2_Emerg`, `P2_OnOff`), retaining **66 active physical channels**.
-* **Scaling Isolation:** `StandardScaler` was fitted strictly on the normal training split (`hai-train1`) and reused to transform validation and test sets.
-* **Reconstruction Threshold:** Threshold $\theta = 0.821954$ was derived from the 99th percentile of reconstruction errors on the chronological validation split.
-* **Performance Trade-Off:** The Autoencoder achieves 92.27% accuracy, but has low attack precision (34.92%) and misses **1,598 attack seconds** (46.39% recall), generating 2,578 false alarms during normal periods.
-
----
-
-## 5. Cross-Domain Integration: Triaged Multi-Channel Performance
-
-### 5.1 Removal of Synthetic Zero-Trust Leakage
-In earlier exploratory runs, a synthetic `zt_context` feature was generated conditionally based on attack scenarios. This leaked the target labels ($r = 0.9110$) and artificially produced a 99.29% F1 score. 
-
-In the frozen implementation ([train_fusion_model.py](file:///c:/ResiNet-IDAM/src/integration/train_fusion_model.py)), **`zt_context` was completely removed**. The cross-domain model relies strictly on real telemetry:
-$$R_{\text{CP}}(t) = \sigma\Big(6.5199\,p_{\text{attack}}(t) + 4.7116\,S_{\text{OT}}(t) - 0.0324\,\big(p_{\text{attack}}(t) \cdot S_{\text{OT}}(t)\big) - 7.9211\Big)$$
-
-### 5.2 Out-of-Sample Benchmark Comparison (26,686 Test Records)
-| Pipeline / Channel | Accuracy | Precision | Recall | Attack F1 | False Positive Rate | False Positives | False Negatives |
-|---|---|---|---|---|---|---|---|
-| **IT Channel Alone ($R_{\text{IT}} \ge 0.50$)** | 94.99% | 0.4559 | **0.9796** | **0.6222** | 5.14% | 1,315 | 23 |
-| **OT Channel Alone ($R_{\text{OT}} \ge 0.50$)** | 92.51% | 0.1234 | 0.1271 | 0.1252 | 3.97% | 1,016 | 982 |
-| **Equal-Weight Linear ($0.5\,p_{\text{att}} + 0.5\,S_{\text{ot}}$)** | 95.88% | 0.5058 | 0.9671 | 0.6642 | 4.16% | 1,063 | 37 |
-| **Trained $R_{\text{CP}}$ (Without $ZT$)** | **95.97%** | **0.5644** | **0.1947** | **`28.95%`** | **0.66%** | **169** | **906** |
-
-*True Metric:* Without shortcut features, the cyber-physical correlation model achieves **`F1 = 28.95%`**. It suppresses false positives down to 0.66%, but exhibits conservative recall (19.47%) due to missed detections in the OT Autoencoder.
-
-### 5.3 Detailed Scenario Audit & Scenario D Analysis
-The system dispatches alerts through three independent channels:
-* **Tier 4 (Critical CP):** Automated plant/network isolation.
-* **Tier 2 (Process Alert):** Dispatched to Plant Engineering without requiring IT corroboration.
-* **Tier 2 (Enterprise Alert):** Dispatched to Enterprise SOC without tripping physical safety limits.
-
-| Scenario Breakdown | Total Records | IT Alerts | OT Alerts | Cyber-Physical Alerts ($R_{\text{CP}}$) | Tier-2 OT Triage | Tier-2 IT Triage | Total Attacks Caught |
-|---|---|---|---|---|---|---|---|
-| **Normal Baseline** | 24,445 | 329 (1.3%) | 965 (3.9%) | 20 (0.1%) | 952 | 308 | 1,281 (5.2% FPR) |
-| **Scenario A (Correlated Attack)** | 1,069 | 1,069 (100.0%) | 130 (12.2%) | 210 (19.6%) | 0 | 859 | **1,069 (100.0%)** |
-| **Scenario B (Stealth Infil)** | 56 | 33 (58.9%) | 13 (23.2%) | 9 (16.1%) | 5 | 24 | **38 (67.9%)** |
-| **Scenario C (Isolated IT Threat)** | 984 | 984 (100.0%) | 41 (4.2%) | 149 (15.1%) | 0 | 835 | **984 (100.0%)** |
-| **Scenario D (Isolated OT Fault)** | 132 | 2 (1.5%) | **10 (7.6%)** | **0 (0.0%)** | **10 (7.6%)** | 2 | **12 (9.1%)** |
-
-#### Scenario D Audit (Isolated OT Physical Attacks):
-* In Scenario D, physical sensor tampering occurred in the OT environment without an IT network precursor.
-* **Previous Failure:** Single-decision model flagged 0/132 attacks because it required IT corroboration (100% false negative rate).
-* **Multi-Channel Result:** Dispatched as a **Tier-2 Plant Engineering Alert**. 
-* **Missed Attack Breakdown:** The OT Autoencoder caught **10 out of 132 physical attack seconds (7.6%)** and **missed 122 attack seconds** due to its baseline reconstruction threshold.
-
----
-
-## 6. Zero-Day Intrusion Evaluation: 100% Deterministic Reproducibility
-
-Two consecutive runs of [evaluate_loco.py](file:///c:/ResiNet-IDAM/src/integration/evaluate_loco.py) with seed 42 verified identical outputs:
-
+#### Configuration A (All 79 Features)
 ```
-=======================================================
-  LOCO ZERO-DAY EXPERIMENT (SEED 42 - DETERMINISTIC)
-=======================================================
-1. Closed-World Supervised Model (Random Forest on N-1 classes):
-   - Withheld 'Infiltration': Forced 6 / 6 (100.0%) to 'Normal'
-   - Withheld 'Botnet ARES':  Forced 375 / 375 (100.0%) to 'Normal'
-   --> Result: Closed-world classifiers provide 0% defense against novel attacks.
+               precision    recall  f1-score   support
 
-2. Out-of-Distribution Anomaly Detector (Isolation Forest on Normal Baseline):
-   - Withheld 'Infiltration':
-     * Detection Rate: 33.33% (2 / 6 detected at 1.01% FPR)
-     * ROC-AUC: 0.8332
-   - Withheld 'Botnet ARES':
-     * Detection Rate: 0.00% (0 / 375 detected at 1.01% FPR)
-     * ROC-AUC: 0.5562
+ Botnet ARES     0.9894    1.0000    0.9947       375
+ Brute Force     1.0000    1.0000    1.0000      2040
+    Dos/DDos     0.9891    0.9994    0.9943      5191
+Infiltration     1.0000    0.6667    0.8000         6
+      Normal     0.9985    0.9870    0.9927      5237
+    PortScan     0.9986    0.9996    0.9991      5082
+  Web Attack     0.9976    0.9952    0.9964       413
+
+    accuracy                         0.9958     18344
+   macro avg     0.9962    0.9497    0.9682     18344
+weighted avg     0.9958    0.9958    0.9958     18344
+```
+**Confusion Matrix (Config A):**
+```
+[[  375     0     0     0     0     0     0]   <- Botnet ARES
+ [    0  2040     0     0     0     0     0]   <- Brute Force
+ [    0     0  5188     0     3     0     0]   <- Dos/DDos
+ [    0     0     0     4     2     0     0]   <- Infiltration
+ [    4     0    56     0  5169     7     1]   <- Normal
+ [    0     0     1     0     1  5080     0]   <- PortScan
+ [    0     0     0     0     2     0   411]]  <- Web Attack
 ```
 
-### Why Botnet ARES Fails (0.00% Detection Rate):
-1. **Flow Distribution Overlap:** In tabular NetFlow feature space (packet lengths, inter-arrival times, flow durations), low-frequency Botnet command-and-control (C2) flows overlap with legitimate periodic background traffic (e.g., NTP keepalives, HTTP polling).
-2. **Density Blind Spot:** Unsupervised density estimation (Isolation Forest) trained purely on normal network flows cannot separate Botnet ARES from legitimate traffic without DNS domain reputation, host process trees, or protocol-aware payload inspection.
-3. **Scientific Finding:** Zero-day detection claims are unsupported for distribution-overlapping threats under flow-level telemetry alone.
+#### Configuration B (77 Features - Source & Destination Ports Removed)
+```
+               precision    recall  f1-score   support
+
+ Botnet ARES     0.9071    0.9893    0.9464       375
+ Brute Force     0.9985    0.9990    0.9988      2040
+    Dos/DDos     0.9732    0.9927    0.9828      5191
+Infiltration     1.0000    0.6667    0.8000         6
+      Normal     0.9898    0.9633    0.9764      5237
+    PortScan     0.9986    0.9996    0.9991      5082
+  Web Attack     0.9927    0.9879    0.9903       413
+
+    accuracy                         0.9866     18344
+   macro avg     0.9800    0.9426    0.9563     18344
+weighted avg     0.9869    0.9866    0.9866     18344
+```
+**Confusion Matrix (Config B):**
+```
+[[  371     0     0     0     4     0     0]   <- Botnet ARES (4 missed as Normal)
+ [    0  2038     0     0     2     0     0]   <- Brute Force (2 missed as Normal)
+ [    0     0  5153     0    38     0     0]   <- Dos/DDos (38 missed as Normal)
+ [    0     0     0     4     2     0     0]   <- Infiltration (2 missed as Normal)
+ [   38     3   141     0  5045     7     3]   <- Normal (192 false alarms)
+ [    0     0     1     0     1  5080     0]   <- PortScan (1 missed as Normal)
+ [    0     0     0     0     5     0   408]]  <- Web Attack (5 missed as Normal)
+```
+
+### 3.3 Diagnostic Analysis of the 824 Overlapping Vectors (Config B)
+When ephemeral port numbers are excluded, **824 unique feature vectors** occur in both the training set and the test set, instantiating **7,080 test rows (38.60% of the test partition)**:
+* **Repeated Patterns (97.69% of unique vectors, 805 / 824):** Share the exact same class label across train and test partitions. Due to repetitive automated attack scripts, these account for 6,687 test rows (e.g., 5,014 identical 0-payload TCP SYN PortScan probes; 748 Brute Force attempts; 937 DoS/DDoS packets).
+* **Ambiguous Representations (2.31% of unique vectors, 19 / 824):** Feature collisions where identical packet lengths and TCP flag distributions represent different classes:
+  - **17 vectors** collide between `Normal` and `PortScan` (single-packet TCP connection resets or aborted handshakes without payload).
+  - **1 vector** collides between `Normal` and `Dos/DDos`.
+  - **1 vector** collides between `Normal` and `Botnet ARES`.
+* **Diagnostic Consequence:** These 19 ambiguous representations directly drive the increase in False Positive Rate from 1.30% in Config A to **3.67% in Config B** (falsely flagging 38 Normal flows as Botnet ARES, 141 as DoS/DDoS, and 7 as PortScan). These rows were preserved intact without deduplication to maintain an unbiased test partition.
 
 ---
 
-## 7. Primary Project Limitation: Synthetic Cross-Domain Pairing
+## 4. Synthetic Held-Out-Class Evaluation (LOCO)
 
-> [!WARNING]
-> **Synthetic Coupling Limitation:** 
-> Because `IDS2025` and `HAI` were captured on separate testbeds at different times, the cross-domain pairing in this prototype is synthetically generated. Real multi-stage cyber-physical correlation cannot be fully validated until synchronized, time-aligned IT and OT telemetry is recorded from a concurrent testbed.
+To measure detection performance against unseen threats, a standalone Leave-One-Class-Out (LOCO) evaluation was conducted. Supervised models were trained on $N-1$ classes, while unsupervised Isolation Forests were trained on the earlier 80% of Normal training data ($N=16,748$) and calibrated on the later 20% ($N=4,188$) to freeze threshold $\tau$ at the 99th percentile before evaluating against untouched test sets.
+
+### 4.1 Summary of Synthetic LOCO Performance
+
+| Feature Configuration | Withheld Class | Test $N$ | Supervised $\rightarrow$ `Normal`<br>*(Silent Bypass)* | Anomaly Recall<br>*(Frozen $\tau$)* | Val FPR<br>*(Target $\approx 1\%$)* | Test FPR<br>*(Normal Test)* | Precision | F1-Score | ROC-AUC |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Config A** *(All 79 Feats)* | **Infiltration\*** | 6 | **100.00%** (6/6) | **33.33%** (2/6) | 1.00% | **1.05%** (55/5,237) | 0.0351 | 0.0635 | **0.7962** |
+| **Config A** *(All 79 Feats)* | **Botnet ARES** | 375 | **100.00%** (375/375) | **0.00%** (0/375) | 1.00% | **1.05%** (55/5,237) | 0.0000 | 0.0000 | **0.5587** |
+| **Config B** *(No Ports - 77 Feats)* | **Infiltration\*** | 6 | **100.00%** (6/6) | **33.33%** (2/6) | 1.00% | **1.28%** (67/5,237) | 0.0290 | 0.0533 | **0.7916** |
+| **Config B** *(No Ports - 77 Feats)* | **Botnet ARES** | 375 | **100.00%** (375/375) | **0.00%** (0/375) | 1.00% | **1.28%** (67/5,237) | 0.0000 | 0.0000 | **0.5236** |
+
+*\*Statistical Caution: Infiltration test sample size is $N=6$. A detection score of 2/6 (33.33%) carries an asymptotic 95% Wilson confidence interval of $[9.7\%, 70.0\%]$. It must be treated as indicative and anecdotal.*
+
+### 4.2 Key Evaluation Findings
+
+1. **Closed-World Classification Failure:**
+   When an unseen intrusion is presented to a supervised Random Forest, it is forcibly categorized into known labels. For both `Infiltration` and `Botnet ARES`, **100.00% of unseen flows were classified as `Normal`**. Closed-world supervised classifiers offer zero proactive defense against novel intrusion types.
+2. **Key Limitation — Botnet ARES Complete Failure (0.00% Detection Rate):**
+   Across both Configuration A and Configuration B, the anomaly detector exhibits a **0.00% detection rate** (0 / 375 detected) and an ROC-AUC of **0.5236 to 0.5587** (statistically equivalent to random guessing). 
+   - *Technical Cause:* In tabular NetFlow feature representations (flow duration, byte volume, packet inter-arrival times), low-rate Botnet C2 beaconing packets match benign background keepalives and periodic HTTP polling traffic.
+   - *Architectural Implication:* Flow-level density estimation trained solely on benign network traffic is fundamentally blind to low-rate C2 channels. Detecting such threats requires endpoint telemetry, DNS domain reputation, or deep packet inspection.
+
+---
+
+## 5. Summary of Core Research Limitations
+
+| Domain / Dimension | Limitation Description | Impact on Claims |
+| :--- | :--- | :--- |
+| **IT Temporal Splitting** | `IDS2025.xlsx` contains no timestamps, IP addresses, or flow IDs. Contiguous sequential block splitting is a **row-order proxy**, not a verified chronological split. | Prevents intra-burst point interpolation, but does not guarantee campaign independence. |
+| **Zero-Day Generalization** | The LOCO experiment tests held-out classes from the same capture environment and synthetic testbed. | Evaluates out-of-distribution detection on known distributions; does not establish real-world zero-day generalization. |
+| **Statistical Support** | `Infiltration` has only 23 training and 6 test instances in `IDS2025`. | Metrics for Infiltration are statistically uncertain ($\pm 35\%$ confidence bounds). |
+| **Distribution Overlap** | Unsupervised flow density estimation fails completely on low-rate `Botnet ARES` (0.00% recall). | Intrusion detection cannot claim general zero-day capability using flow features alone. |
+| **OT Attack Coverage** | The OT Autoencoder achieves 46.39% attack recall, missing 1,598 attack seconds in physical telemetry. | Subtle sensor spoofing within operational tolerances bypasses simple reconstruction thresholds. |
+| **Cross-Domain Coupling** | `IDS2025` and `HAI` were captured on separate testbeds and are synthetically paired. | Real cross-domain correlation cannot be proven without concurrent cyber-physical testbed telemetry. |
 
 ---
 
-## 8. Artifact and Script Inventory (Frozen Prototype)
+## 6. Complete Artifact & Script Inventory
 
-| Artifact Path | Role / Content |
-|---|---|
-| `data/processed/it/it_train.npz` | Scaled IT training partition (73,395 records, 79 features) |
-| `data/processed/it/it_test.npz` | Scaled IT test partition (18,349 records, 79 features) |
-| `data/processed/hai-train-scaled.csv` | Scaled normal OT training telemetry (280,800 records, 66 features) |
-| `data/processed/hai-test-scaled.csv` | Labeled OT test telemetry (54,000 records, 14 attack blocks) |
-| `models/it/random_forest.joblib` | Trained IT baseline classifier (200 trees, balanced) |
-| `models/ot_autoencoder.keras` | Trained OT autoencoder baseline |
-| `models/fusion_model.joblib` | Trained cross-domain correlation model (without ZT shortcuts) |
-| `src/integration/verify_schemas.py` | Schema and artifact validation script |
-| `src/integration/generate_scenarios.py` | Chronologically partitioned benchmark scenario generator |
-| `src/integration/calibrate_scores.py` | Validation-isolated score calibration script |
-| `src/integration/train_fusion_model.py` | Multi-channel triage evaluation script |
-| `src/integration/evaluate_loco.py` | Deterministic Leave-One-Class-Out zero-day evaluation script |
-| `src/integration/investigate_leakage.py` | IT leakage and OT distribution audit script |
-| `data/reports/integration_report.txt` | Detailed multi-channel evaluation report |
-| `data/reports/loco_zero_day_report.txt` | Detailed LOCO zero-day evaluation report |
-| `IT_EVALUATION_PLAN.md` | Formal IT reliability roadmap |
-| `IT_OT_INTEGRATION_PLAN.md` | Multi-channel integration design document |
-| `FINAL_RESEARCH_REPORT.md` | Comprehensive frozen baseline evaluation report |
+| Artifact / Script Path | Role & Content |
+| :--- | :--- |
+| `data/processed/it_realistic/it_train_all.npz` | Contiguous train set, Configuration A (73,400 rows, 79 features) |
+| `data/processed/it_realistic/it_test_all.npz` | Contiguous test set, Configuration A (18,344 rows, 79 features) |
+| `data/processed/it_realistic/it_train_no_ports.npz` | Contiguous train set, Configuration B (73,400 rows, 77 features) |
+| `data/processed/it_realistic/it_test_no_ports.npz` | Contiguous test set, Configuration B (18,344 rows, 77 features) |
+| `data/processed/it_realistic/metadata.json` | Complete partition boundaries, class distributions, and feature indices |
+| `data/processed/it_realistic/loco_predictions.json` | Frozen thresholds ($\tau$), validation FPRs, and LOCO test metrics |
+| `models/it_realistic/random_forest_all.joblib` | 7-class benchmark model (Config A, 79 features) |
+| `models/it_realistic/random_forest_no_ports.joblib` | 7-class benchmark model (Config B, 77 features) |
+| `models/it_realistic/loco_rf_*.joblib` | Supervised models trained on $N-1$ classes for LOCO evaluation |
+| `models/it_realistic/loco_iforest_*.joblib` | Isolation Forest anomaly detectors calibrated on Normal validation flows |
+| `src/prepare_it_realistic_data.py` | Contiguous sequential 80/20 partition generator with train-only scaling |
+| `src/evaluate_it_realistic.py` | Benchmark evaluation script for Configurations A and B |
+| `src/audit_realistic_evaluation.py` | Verification and audit script for predictions, matrices, and the 824 overlaps |
+| `src/evaluate_loco_realistic.py` | Synthetic held-out-class evaluation script with validation-isolated thresholding |
+| `data/reports/it_realistic_evaluation_report.txt` | Detailed 7-class realistic evaluation report |
+| `data/reports/loco_synthetic_evaluation_report.txt` | Detailed LOCO synthetic evaluation report |
+| `FINAL_RESEARCH_REPORT.md` | Consolidated final research document |
 
 ---
-*Report Version: 1.0 (Frozen Research Prototype)*  
-*Project: ResiNet-IDAM*
+*Report Version: 2.0 (Realistic Benchmark & Synthetic LOCO Integration)*  
+*Project: ResiNet-IDAM (Adaptive Deep Learning and Zero-Trust Framework)*

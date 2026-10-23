@@ -1,0 +1,122 @@
+RESINET-IDAM: REALISTIC IT BENCHMARK EVALUATION REPORT
+======================================================================
+Evaluation Date: 2026-10-23
+Split Methodology: Contiguous Sequential 80/20 Block Split (Row-Order Temporal Proxy)
+Model: RandomForestClassifier(n_estimators=200, class_weight="balanced", random_state=42, n_jobs=2)
+
+PRIMARY RESEARCH LIMITATION:
+This evaluation uses a row-order-based temporal-proxy split along the contiguous blocks
+of IDS2025.xlsx. It prevents random point-wise interpolation within bursts, but CANNOT
+be claimed as a true campaign-independent or zero-day evaluation because original timestamps,
+flow IDs, and campaign metadata are completely unavailable in the source dataset.
+
+1. BENCHMARK COMPARISON TABLE
+----------------------------------------------------------------------
+Metric                    Frozen Baseline*    Configuration A         Configuration B
+                          (Random Stratified) (Contiguous, 79 Feats)  (Contiguous, No Ports)
+---------------------------------------------------------------------------------------------
+Number of Features:       79                  79                      77
+Split Protocol:           Random Stratified   Contiguous Sequential   Contiguous Sequential
+Overall Test Accuracy:    99.56%               99.58%                   98.66%
+Macro F1-Score:           96.76%               96.82%                   95.63%
+Weighted F1-Score:        99.56%               99.58%                   98.66%
+Benign FPR (Normal=Neg):  0.15%                 1.30%                     3.67%
+Attack FNR (Missed=Norm): 0.44%                 0.06%                     0.40%
+Exact Vector Overlap:     0 rows              1 row(s)                  824 rows
+
+*Note on Frozen Baseline: The random-split baseline is included strictly as a reference point.
+It is NOT a directly equivalent test because random stratified splitting interpolates flows
+within continuous attack bursts, whereas the contiguous split forces out-of-burst extrapolation.
+
+2. DIAGNOSTIC FEATURE-VECTOR OVERLAP ANALYSIS
+----------------------------------------------------------------------
+- Configuration A (All 79 Features): Exactly 1 overlapping row across train and test.
+- Configuration B (No Ports - 77 Features): Exactly 824 overlapping rows across train and test.
+
+Interpretation:
+The 824 exact overlaps in Configuration B are a critical diagnostic finding. When ephemeral
+port numbers (which change dynamically with every new TCP connection) are excluded, 824 flow
+records in the test set have identical feature vectors to records in the training set (identical
+packet counts, byte volumes, header lengths, and TCP flag profiles).
+Because original flow IDs and timestamps are unavailable, we cannot definitively prove whether
+these 824 rows represent identical duplicate observations from the same capture script or
+legitimate repeated protocol behavior (e.g., standard DNS queries or identical keepalives).
+They are preserved as-is without deduplication to maintain an unbiased out-of-burst evaluation.
+
+3. CONFIGURATION A DETAILED REPORT (ALL 79 FEATURES)
+----------------------------------------------------------------------
+FPR Definition: Normal = Negative (5,237 flows), Attacks = Positive (13,107 flows)
+- True Negatives (TN): 5169
+- False Positives (FP): 68  --> FPR = 1.2985%
+- False Negatives (FN): 8  --> FNR = 0.0610%
+- True Positives (TP): 13099
+
+Classification Report:
+              precision    recall  f1-score   support
+
+ Botnet ARES     0.9894    1.0000    0.9947       375
+ Brute Force     1.0000    1.0000    1.0000      2040
+    Dos/DDos     0.9891    0.9994    0.9943      5191
+Infiltration     1.0000    0.6667    0.8000         6
+      Normal     0.9985    0.9870    0.9927      5237
+    PortScan     0.9986    0.9996    0.9991      5082
+  Web Attack     0.9976    0.9952    0.9964       413
+
+    accuracy                         0.9958     18344
+   macro avg     0.9962    0.9497    0.9682     18344
+weighted avg     0.9958    0.9958    0.9958     18344
+
+
+Confusion Matrix (rows = true label, cols = predicted label):
+Classes: ['Botnet ARES', 'Brute Force', 'Dos/DDos', 'Infiltration', 'Normal', 'PortScan', 'Web Attack']
+[[ 375    0    0    0    0    0    0]
+ [   0 2040    0    0    0    0    0]
+ [   0    0 5188    0    3    0    0]
+ [   0    0    0    4    2    0    0]
+ [   4    0   56    0 5169    7    1]
+ [   0    0    1    0    1 5080    0]
+ [   0    0    0    0    2    0  411]]
+
+4. CONFIGURATION B DETAILED REPORT (NO PORTS - 77 FEATURES)
+----------------------------------------------------------------------
+FPR Definition: Normal = Negative (5,237 flows), Attacks = Positive (13,107 flows)
+- True Negatives (TN): 5045
+- False Positives (FP): 192  --> FPR = 3.6662%
+- False Negatives (FN): 52  --> FNR = 0.3967%
+- True Positives (TP): 13055
+
+Classification Report:
+              precision    recall  f1-score   support
+
+ Botnet ARES     0.9071    0.9893    0.9464       375
+ Brute Force     0.9985    0.9990    0.9988      2040
+    Dos/DDos     0.9732    0.9927    0.9828      5191
+Infiltration     1.0000    0.6667    0.8000         6
+      Normal     0.9898    0.9633    0.9764      5237
+    PortScan     0.9986    0.9996    0.9991      5082
+  Web Attack     0.9927    0.9879    0.9903       413
+
+    accuracy                         0.9866     18344
+   macro avg     0.9800    0.9426    0.9563     18344
+weighted avg     0.9869    0.9866    0.9866     18344
+
+
+Confusion Matrix (rows = true label, cols = predicted label):
+Classes: ['Botnet ARES', 'Brute Force', 'Dos/DDos', 'Infiltration', 'Normal', 'PortScan', 'Web Attack']
+[[ 371    0    0    0    4    0    0]
+ [   0 2038    0    0    2    0    0]
+ [   0    0 5153    0   38    0    0]
+ [   0    0    0    4    2    0    0]
+ [  38    3  141    0 5045    7    3]
+ [   0    0    1    0    1 5080    0]
+ [   0    0    0    0    5    0  408]]
+
+5. SCIENTIFIC CONCLUSIONS
+----------------------------------------------------------------------
+1. Effect of Out-of-Burst Splitting: Evaluating on the later 20% of contiguous label blocks
+   eliminates the point-wise interpolation artifact inherent in random stratified splits.
+2. Effect of Port Sanitization: Removing Source and Destination Ports evaluates whether the
+   model relies on port-memorization shortcuts (which yielded 88.15% decision tree accuracy)
+   or true behavioral traffic dynamics.
+3. Frozen V1.0 Integrity: All baseline V1.0 reports, datasets, and models remain preserved
+   and unchanged in their respective directories.
