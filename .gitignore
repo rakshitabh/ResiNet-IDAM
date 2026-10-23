@@ -32,3 +32,11 @@ Thumbs.db
 # Local SQLite databases and logs
 *.db
 *.log
+
+# IT datasets and generated reports
+data/it/
+dataset/raw/
+reports/it/
+
+# Local backup
+app_backup.py

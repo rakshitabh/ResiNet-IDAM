@@ -54,48 +54,62 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Import 4 Specific Pages
+# Import Pages
 from src.demo.pages.page_overview import render_overview
 from src.demo.pages.page_detection_lab import render_detection_lab
 from src.demo.pages.page_zero_trust_simulator import render_zero_trust_simulator
 from src.demo.pages.page_evaluation import render_evaluation
+from src.demo.pages.page_ids2025_risk import render_ids2025_risk
 
 def main():
-    # Sidebar Header & Navigation
+    # Sidebar Brand & Navigation
     with st.sidebar:
         st.markdown("""
-<div style="padding: 10px 0 16px 0; border-bottom: 1px solid #1e293b; margin-bottom: 16px;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 24px;">🛡️</span>
-        <div>
-            <div style="color: #ffffff; font-weight: 800; font-size: 18px; letter-spacing: 0.5px;">RESINET-IDAM</div>
-            <div style="color: #00e5ff; font-size: 11px; font-weight: 600; text-transform: uppercase;">Reviewer Demo v2.0</div>
+        <div style="padding: 10px 0 20px 0;">
+            <h2 style="color: #00e5ff; margin:0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
+                🛡️ ResiNet-IDAM
+            </h2>
+            <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">
+                IT-OT Intrusion Detection & Zero-Trust
+            </div>
         </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+
+        pages = [
+            "Page 1: Overview",
+            "Page 2: Detection Lab",
+            "Page 3: Zero-Trust Decision Simulator",
+            "Page 4: Evaluation",
+            "Page 5: IDS2025 Risk Dashboard",
+        ]
 
         page_choice = st.radio(
-            "Navigation Modules:",
-            [
-                "Page 1: Overview",
-                "Page 2: Detection Lab",
-                "Page 3: Zero-Trust Decision Simulator",
-                "Page 4: Evaluation"
-            ],
-            index=0
+            "Navigation",
+            pages,
+            index=0,
+            label_visibility="collapsed"
         )
 
-        st.markdown("<br><hr style='border-color: #1e293b;'>", unsafe_allow_html=True)
+        st.markdown("<hr style='border-color: #1e293b;'>", unsafe_allow_html=True)
 
+        # System Health Card
         st.markdown("""
-<div style="color: #94a3b8; font-size: 12px; line-height: 1.5;">
-    <b style="color: #cbd5e1;">Evaluation Mode:</b> Replay of recorded telemetry<br>
-    <b style="color: #cbd5e1;">IT Dataset:</b> IDS2025 (79 feats)<br>
-    <b style="color: #cbd5e1;">OT Dataset:</b> HAI 21.03 (66 feats)<br>
-    <b style="color: #cbd5e1;">Branch:</b> <code>feature/realistic-evaluation</code>
-</div>
-""", unsafe_allow_html=True)
+        <div style="background-color: #131d2e; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">Runtime Pipeline</div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">IT Flow RF:</span>
+                <span style="color: #10b981; font-weight: 600;">ACTIVE (7-Class)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">OT HAI Detector:</span>
+                <span style="color: #10b981; font-weight: 600;">ACTIVE (98.6%)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span style="color: #94a3b8;">Zero-Trust Engine:</span>
+                <span style="color: #38bdf8; font-weight: 600;">ENFORCING</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown("<hr style='border-color: #1e293b;'>", unsafe_allow_html=True)
         st.markdown("""
@@ -114,6 +128,8 @@ def main():
         render_zero_trust_simulator()
     elif page_choice == "Page 4: Evaluation":
         render_evaluation()
+    elif page_choice == "Page 5: IDS2025 Risk Dashboard":
+        render_ids2025_risk()
 
 if __name__ == "__main__":
     main()
