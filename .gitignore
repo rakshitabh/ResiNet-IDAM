@@ -17,6 +17,10 @@ __pycache__/
 # Original datasets
 data/raw/
 
+# Large processed training datasets (>100MB GitHub limit)
+data/processed/hai-train-features.csv
+data/processed/hai-train-scaled.csv
+
 # Trained models and generated thresholds
 models/
 
