@@ -22,7 +22,10 @@ data/processed/hai-train-features.csv
 data/processed/hai-train-scaled.csv
 
 # Trained models and generated thresholds
-models/
+models/*
+!models/it_realistic/
+models/it_realistic/*
+!models/it_realistic/random_forest_all.joblib
 
 # Editor and OS files
 .vscode/
