@@ -35,4 +35,4 @@ frontend/dist/
 
 # Local backup
 app_backup.py
-data/processed/ 
+data/processed/
