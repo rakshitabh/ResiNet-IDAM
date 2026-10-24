@@ -1,135 +1,264 @@
-"""
-ResiNet-IDAM: Adaptive IT-OT Intrusion Detection Research Demo
-=============================================================
-Main Streamlit application entry point.
-"""
+"""Unified ResiNet-IDAM Streamlit application."""
 
-import sys
-from unittest.mock import MagicMock
+from __future__ import annotations
 
-# Proactively patch binary modules blocked by Windows Application Control
-# (These modules are not used by Random Forest or Isolation Forest).
-if 'sklearn.svm._libsvm_sparse' not in sys.modules:
-    sys.modules['sklearn.svm._libsvm_sparse'] = MagicMock()
-if 'scipy.stats._qmvnt_cy' not in sys.modules:
-    sys.modules['scipy.stats._qmvnt_cy'] = MagicMock()
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
 
+import pandas as pd
 import streamlit as st
 
-# Configure wide layout and page metadata
-st.set_page_config(
-    page_title="ResiNet-IDAM: Adaptive IT-OT Intrusion Detection Demo",
-    page_icon="🛡️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+from src.application.detection_service import DetectionService
+from src.infrastructure.config import AppConfig
 
-# Custom High-End Styling
-st.markdown("""
-<style>
-    .main {
-        background-color: #0b0f17;
-    }
-    .block-container {
-        padding-top: 1.8rem;
-        padding-bottom: 2rem;
-    }
-    [data-testid="stSidebar"] {
-        background-color: #0e141f;
-        border-right: 1px solid #1e293b;
-    }
-    [data-testid="stMetricValue"] {
-        font-size: 22px;
-        font-weight: 700;
-    }
-    .stButton>button {
-        border-radius: 6px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    .stButton>button:hover {
-        border-color: #00e5ff;
-        color: #00e5ff;
-    }
-</style>
-""", unsafe_allow_html=True)
 
-# Import Pages
-from src.demo.pages.page_overview import render_overview
-from src.demo.pages.page_detection_lab import render_detection_lab
-from src.demo.pages.page_zero_trust_simulator import render_zero_trust_simulator
-from src.demo.pages.page_evaluation import render_evaluation
-from src.demo.pages.page_ids2025_risk import render_ids2025_risk
+ROOT = Path(__file__).resolve().parent
+config = AppConfig.from_environment(ROOT)
 
-def main():
-    # Sidebar Brand & Navigation
+
+@st.cache_resource
+def get_service() -> DetectionService:
+    return DetectionService(config.root, config.database_path)
+
+
+@st.cache_data
+def load_profile() -> dict[str, Any]:
+    path = config.reports_path / "dataset-profile.json"
+    return __import__("json").loads(path.read_text(encoding="utf-8"))
+
+
+@st.cache_data
+def load_metrics() -> dict[str, Any]:
+    path = config.reports_path / "baseline_metrics.json"
+    return __import__("json").loads(path.read_text(encoding="utf-8"))
+
+
+def main() -> None:
+    st.set_page_config(
+        page_title="ResiNet-IDAM Security Operations",
+        page_icon="R",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    st.markdown(
+        """
+        <style>
+        .block-container {max-width: 1500px; padding-top: 1.5rem;}
+        [data-testid="stMetricValue"] {font-size: 1.6rem;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    service = get_service()
     with st.sidebar:
-        st.markdown("""
-        <div style="padding: 10px 0 20px 0;">
-            <h2 style="color: #00e5ff; margin:0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
-                🛡️ ResiNet-IDAM
-            </h2>
-            <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">
-                IT-OT Intrusion Detection & Zero-Trust
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        pages = [
-            "Page 1: Overview",
-            "Page 2: Detection Lab",
-            "Page 3: Zero-Trust Decision Simulator",
-            "Page 4: Evaluation",
-            "Page 5: IDS2025 Risk Dashboard",
-        ]
-
-        page_choice = st.radio(
-            "Navigation",
-            pages,
-            index=0,
-            label_visibility="collapsed"
+        st.title("ResiNet-IDAM")
+        st.caption("Security operations console")
+        page = st.radio(
+            "Workspace",
+            [
+                "Operations overview",
+                "Detection workspace",
+                "Alert management",
+                "Risk assessment",
+                "Model and data health",
+                "Administration",
+            ],
         )
+        st.divider()
+        st.caption(f"Environment: {config.environment}")
+        st.caption(f"IT detector: {'available' if service.availability()['IT'] else 'not configured'}")
+        st.caption(f"OT detector: {'available' if service.availability()['OT'] else 'not configured'}")
 
-        st.markdown("<hr style='border-color: #1e293b;'>", unsafe_allow_html=True)
+    if page == "Operations overview":
+        render_overview(service)
+    elif page == "Detection workspace":
+        render_detection(service)
+    elif page == "Alert management":
+        render_alerts(service)
+    elif page == "Risk assessment":
+        render_risk(service)
+    elif page == "Model and data health":
+        render_health(service)
+    else:
+        render_admin(service)
 
-        # System Health Card
-        st.markdown("""
-        <div style="background-color: #131d2e; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-            <div style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">Runtime Pipeline</div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-                <span style="color: #94a3b8;">IT Flow RF:</span>
-                <span style="color: #10b981; font-weight: 600;">ACTIVE (7-Class)</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-                <span style="color: #94a3b8;">OT HAI Detector:</span>
-                <span style="color: #10b981; font-weight: 600;">ACTIVE (98.6%)</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px;">
-                <span style="color: #94a3b8;">Zero-Trust Engine:</span>
-                <span style="color: #38bdf8; font-weight: 600;">ENFORCING</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
 
-        st.markdown("<hr style='border-color: #1e293b;'>", unsafe_allow_html=True)
-        st.markdown("""
-<div style="color: #64748b; font-size: 11px; text-align: center;">
-    Adaptive IT-OT Intrusion Detection<br>
-    &copy; 2026 ResiNet-IDAM Project
-</div>
-""", unsafe_allow_html=True)
+def render_overview(service: DetectionService) -> None:
+    st.title("Operations overview")
+    summary = service.store.summary()
+    distribution = summary["risk_distribution"]
+    high = distribution.get("HIGH", 0) + distribution.get("CRITICAL", 0)
+    cards = st.columns(4)
+    cards[0].metric("Processed events", summary["total_events"])
+    cards[1].metric("Anomalies", summary["anomalies_detected"])
+    cards[2].metric("High / critical", high)
+    cards[3].metric("Detectors online", sum(service.availability().values()))
+    st.subheader("Risk posture")
+    risk_frame = pd.DataFrame(
+        {"Events": [distribution.get(level, 0) for level in ("LOW", "MEDIUM", "HIGH", "CRITICAL")]},
+        index=["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+    )
+    st.bar_chart(risk_frame)
+    events = service.store.list(limit=10)
+    st.subheader("Recent alerts")
+    if events:
+        st.dataframe(pd.DataFrame(events), use_container_width=True, hide_index=True)
+    else:
+        st.info("No events have been scored.")
 
-    # Route to Selected Page
-    if page_choice == "Page 1: Overview":
-        render_overview()
-    elif page_choice == "Page 2: Detection Lab":
-        render_detection_lab()
-    elif page_choice == "Page 3: Zero-Trust Decision Simulator":
-        render_zero_trust_simulator()
-    elif page_choice == "Page 4: Evaluation":
-        render_evaluation()
-    elif page_choice == "Page 5: IDS2025 Risk Dashboard":
-        render_ids2025_risk()
+
+def render_detection(service: DetectionService) -> None:
+    st.title("Detection workspace")
+    available = service.availability()
+    source = st.selectbox("Telemetry source", ["OT", "IT"], disabled=not any(available.values()))
+    if not available[source]:
+        st.warning(f"{source} detector artifacts are not configured in this deployment.")
+        st.info("Add the detector model and metadata artifacts, then restart the application.")
+        return
+    detector = service.detector(source)
+    schema = detector.feature_schema()
+    st.caption(f"{detector.name} · {len(schema)} ordered features")
+    if source == "OT":
+        data_path = config.data_path / "processed" / "hai-test-scaled.csv"
+        if not data_path.exists():
+            st.error(f"Observation file not found: {data_path}")
+            return
+        frame = pd.read_csv(data_path)
+        index = st.number_input("Observation row", 0, len(frame) - 1, 0)
+        row = frame.iloc[int(index)]
+        values = {name: float(row[name]) for name in schema}
+        timestamp = pd.to_datetime(row["timestamp"], utc=True).to_pydatetime()
+    else:
+        st.info("IT upload/sample selection will use the configured IDS2025 feature contract.")
+        uploaded = st.file_uploader("Upload one-row IT CSV", type="csv")
+        if uploaded is None:
+            return
+        frame = pd.read_csv(uploaded)
+        missing = [name for name in schema if name not in frame.columns]
+        if missing:
+            st.error(f"Missing IT features: {missing[:5]}")
+            return
+        row = frame.iloc[0]
+        values = {name: float(row[name]) for name in schema}
+        timestamp = datetime.now(timezone.utc)
+    with st.form("detection-form"):
+        asset_id = st.text_input("Asset", "asset-01")
+        device_id = st.text_input("Device", "device-01")
+        identity_id = st.text_input("Identity", "identity-01")
+        left, right = st.columns(2)
+        identity_trust = left.slider("Identity trust", 0.0, 1.0, 0.8)
+        device_trust = right.slider("Device trust", 0.0, 1.0, 0.8)
+        asset_criticality = left.slider("Asset criticality", 0.0, 1.0, 0.7)
+        behavior_deviation = right.slider("Behavior deviation", 0.0, 1.0, 0.2)
+        submit = st.form_submit_button("Run detection and create alert")
+    if submit:
+        try:
+            event = service.detect(
+                source,
+                values,
+                timestamp=timestamp,
+                identity_id=identity_id,
+                device_id=device_id,
+                asset_id=asset_id,
+                identity_trust=identity_trust,
+                device_trust=device_trust,
+                asset_criticality=asset_criticality,
+                behavior_deviation=behavior_deviation,
+            )
+        except (RuntimeError, ValueError) as error:
+            st.error(str(error))
+        else:
+            st.success(f"Alert created: {event['event_id']}")
+            st.json(event)
+
+
+def render_alerts(service: DetectionService) -> None:
+    st.title("Alert management")
+    level = st.selectbox("Risk level", ["ALL", "LOW", "MEDIUM", "HIGH", "CRITICAL"])
+    status = st.selectbox("Review status", ["ALL", "NEW", "IN_REVIEW", "RESOLVED"])
+    events = service.store.list(
+        None if level == "ALL" else level,
+        review_status=None if status == "ALL" else status,
+        limit=500,
+    )
+    if not events:
+        st.info("No alerts match the selected filters.")
+        return
+    table = pd.DataFrame(events)
+    st.dataframe(
+        table[["event_id", "source", "timestamp", "asset_id", "prediction", "risk_score", "risk_level", "review_status"]],
+        use_container_width=True,
+        hide_index=True,
+    )
+    event_id = st.selectbox("Open alert", [event["event_id"] for event in events])
+    event = next(item for item in events if item["event_id"] == event_id)
+    st.json(event)
+    new_status = st.selectbox("Update review status", ["NEW", "IN_REVIEW", "RESOLVED"])
+    if st.button("Save review status"):
+        if service.store.update_review(event_id, new_status):
+            st.success("Review status updated.")
+            st.rerun()
+
+
+def render_risk(service: DetectionService) -> None:
+    st.title("Risk assessment")
+    events = service.store.list(limit=500)
+    if not events:
+        st.info("Score an observation to inspect contextual risk.")
+        return
+    event_id = st.selectbox("Select event", [event["event_id"] for event in events])
+    event = next(item for item in events if item["event_id"] == event_id)
+    cards = st.columns(3)
+    cards[0].metric("Risk score", f"{event['risk_score']:.1f}/100")
+    cards[1].metric("Risk level", event["risk_level"])
+    cards[2].metric("Recommended action", event["recommended_action"])
+    st.subheader("Risk components")
+    st.bar_chart(pd.Series(event["risk_components"]))
+    st.json({"context": event["context"], "components": event["risk_components"]})
+
+
+def render_health(service: DetectionService) -> None:
+    st.title("Model and data health")
+    availability = service.availability()
+    st.subheader("Detector availability")
+    st.dataframe(
+        pd.DataFrame({"Detector": list(availability), "Available": list(availability.values())}),
+        use_container_width=True,
+        hide_index=True,
+    )
+    try:
+        profile = load_profile()
+        metrics = load_metrics()
+    except FileNotFoundError as error:
+        st.error(str(error))
+        return
+    cards = st.columns(4)
+    cards[0].metric("Model features", profile["model_input"]["feature_count"])
+    cards[1].metric("Training rows", f"{profile['training']['rows']:,}")
+    cards[2].metric("Test rows", f"{profile['test']['rows']:,}")
+    cards[3].metric("F1", f"{metrics.get('f1', 0):.4f}")
+    with st.expander("Evaluation diagnostics"):
+        st.json(metrics)
+    with st.expander("Dataset feature dictionary"):
+        st.dataframe(pd.DataFrame(profile["features"]), use_container_width=True, hide_index=True)
+
+
+def render_admin(service: DetectionService) -> None:
+    st.title("Administration")
+    st.subheader("Runtime configuration")
+    st.json(
+        {
+            "environment": config.environment,
+            "database": str(config.database_path),
+            "models": str(config.models_path),
+            "data": str(config.data_path),
+            "reports": str(config.reports_path),
+            "detectors": service.availability(),
+        }
+    )
+    st.info("Configuration is read from RESINET_* environment variables. Restart after changing artifacts or paths.")
+
 
 if __name__ == "__main__":
     main()

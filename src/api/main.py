@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from tensorflow import keras
 
 from src.api.database import EventStore
+from src.application.detection_service import DetectionService
+from src.infrastructure.config import AppConfig
 from src.zero_trust.risk_engine import RiskInput, calculate_risk
 
 
@@ -95,58 +97,31 @@ def _load_metadata() -> dict[str, Any]:
 class ScoringService:
     def __init__(self) -> None:
         self.metadata = _load_metadata()
-        self.model = None
-        self.store = EventStore(DATABASE_PATH)
+        config = AppConfig.from_environment(ROOT)
+        self.detection = DetectionService(ROOT, config.database_path)
 
-    def _get_model(self) -> Any:
-        if self.model is None:
-            if not MODEL_PATH.exists():
-                raise RuntimeError(f"Model artifact not found: {MODEL_PATH}")
-            self.model = keras.models.load_model(MODEL_PATH)
-        return self.model
+    @property
+    def store(self) -> EventStore:
+        return self.detection.store
+
+    @store.setter
+    def store(self, value: EventStore) -> None:
+        self.detection.store = value
 
     def score(self, request: ScoreRequest) -> dict[str, Any]:
-        feature_columns = self.metadata["feature_columns"]
-        if list(request.features) != feature_columns:
-            raise ValueError(
-                "features must contain exactly the ordered model feature contract"
-            )
-        values = np.asarray(
-            [request.features[column] for column in feature_columns],
-            dtype=np.float32,
-        ).reshape(1, -1)
-        reconstructed = self._get_model().predict(values, verbose=0)
-        anomaly_score = float(np.mean(np.square(values - reconstructed)))
-        threshold = float(self.metadata["threshold"])
-        anomaly_decision = anomaly_score > threshold
-        risk = calculate_risk(
-            RiskInput(
-                identity_id=request.context.identity_id,
-                device_id=request.context.device_id,
-                asset_id=request.context.asset_id,
-                identity_trust=request.context.identity_trust,
-                device_trust=request.context.device_trust,
-                asset_criticality=request.context.asset_criticality,
-                anomaly_severity=min(anomaly_score / threshold, 1.0),
-                behavior_deviation=request.context.behavior_deviation,
-            )
+        return self.detection.detect(
+            "OT",
+            request.features,
+            timestamp=request.timestamp,
+            identity_id=request.context.identity_id,
+            device_id=request.context.device_id,
+            asset_id=request.context.asset_id,
+            identity_trust=request.context.identity_trust,
+            device_trust=request.context.device_trust,
+            asset_criticality=request.context.asset_criticality,
+            behavior_deviation=request.context.behavior_deviation,
+            review_status=request.review_status,
         )
-        event = {
-            "event_id": str(uuid4()),
-            "timestamp": request.timestamp.isoformat(),
-            "asset_id": request.context.asset_id,
-            "anomaly_score": anomaly_score,
-            "threshold": threshold,
-            "anomaly_decision": anomaly_decision,
-            "risk_score": risk["risk_score"],
-            "risk_level": risk["risk_level"],
-            "review_status": request.review_status,
-            "identity_id": request.context.identity_id,
-            "device_id": request.context.device_id,
-            "context": risk["inputs"],
-            "risk_components": risk["risk_components"],
-        }
-        return self.store.create(event)
 
 
 app = FastAPI(title="ResiNet-IDAM API", version="1.0.0")

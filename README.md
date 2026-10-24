@@ -45,7 +45,7 @@ The proposed framework consists of the following components:
 
 IT Telemetry + OT Telemetry → Data Preprocessing → Anomaly Detection → Risk Assessment and IT-OT Correlation → Monitoring and Response
 
-*This represents the proposed end-to-end architecture. Components are implemented progressively, and the complete integrated framework is not yet finished.*
+The deployed application uses this flow through a shared detection service and a single Streamlit entry point.
 
 ## 5. Technology Stack
 
@@ -59,13 +59,13 @@ The technologies used or planned for the project include:
 | Deep learning | TensorFlow / Keras |
 | Model persistence | joblib and Keras model files |
 | OT benchmark dataset | HAI industrial telemetry dataset |
-| IT detection | To be selected and integrated |
-| Risk assessment and Zero Trust | Planned framework component |
-| Unified dashboard | Planned integration component |
+| IT detection | IDS2025 Random Forest adapter |
+| Risk assessment and Zero Trust | Five-factor contextual risk engine |
+| Unified dashboard | Streamlit operations console |
 
 ## 6. Current Implementation Status
 
-### Implemented: Initial OT Detection Component
+### Implemented
 
 - HAI industrial telemetry data preparation.
 - Feature selection and preprocessing.
@@ -74,32 +74,21 @@ The technologies used or planned for the project include:
 - Autoencoder training using a chronological training and validation split.
 - Preliminary evaluation against labeled HAI test data.
 - Experimental comparison of anomaly-detection performance.
+- IDS2025 IT detector adapter with explicit artifact availability checks.
+- Unified IT/OT event contract and detection orchestration service.
+- Five-factor contextual Zero-Trust risk scoring.
+- SQLite alert persistence and review-status lifecycle.
+- Streamlit operations, detection, alert, risk, health, and administration screens.
+- Optional FastAPI adapter using the same application service.
 
-### Planned or In Progress
+## 7. Deployment documentation
 
-- Integration of an appropriate IT intrusion-detection dataset.
-- IT anomaly-detection pipeline.
-- Unified IT-OT event correlation.
-- Zero Trust risk-scoring and contextual decision mechanisms.
-- Adaptive model updating and evaluation.
-- Unified security monitoring dashboard.
-- Evaluation of the integrated framework under suitable test conditions.
-
-## 7. OT Component Documentation
-
-Detailed instructions for setting up and running the current OT implementation are available in:
-
-- **[OT Setup and Usage Guide](docs/OT_SETUP.md)**
-- **[Master Blueprint](docs/master-blueprint.md)**
-- **[Implementation Plan](docs/implementation_plan.md)**
-- **[Dataset Validation Report](docs/dataset-report.md)**
-- **[Model Evaluation Report](docs/model-evaluation.md)**
-- **[Simulated Risk Policy](docs/risk-policy.md)**
-- **[API Contract](docs/api-contract.md)**
-- **[Integration Test Report](docs/integration-test-report.md)**
-- **[Demonstration Guide](docs/demonstration-guide.md)**
-
-The guide covers environment setup, dataset requirements, preprocessing, model training, evaluation, and troubleshooting.
+- **[Architecture](docs/architecture.md)** — application boundaries and runtime flow.
+- **[Deployment](docs/deployment.md)** — local setup, artifacts, and startup.
+- **[API Contract](docs/api-contract.md)** — optional REST adapter contract.
+- **[Dataset Report](docs/dataset-report.md)** — HAI data contract and validation results.
+- **[Model Evaluation](docs/model-evaluation.md)** — detector metrics and threshold policy.
+- **[Risk Policy](docs/risk-policy.md)** — contextual risk formula and severity actions.
 
 ## 8. Dataset Audit
 
@@ -114,38 +103,22 @@ The commands write machine-readable reports to `reports/`. The validation report
 training file, scaler artifact, feature ordering, timestamps, labels, and finite-value checks are available and valid.
 Training must not proceed until the normal-only training assumption and scaler provenance are verified.
 
-## 9. Local dashboard
+## 9. Local application
 
-Start the API and dashboard in separate terminals:
-
-PowerShell:
-
-```powershell
-.\.venv-ae\Scripts\python.exe -m uvicorn src.api.main:app --reload
-Set-Location frontend
-npm install
-npm run dev
-```
-
-Command Prompt:
+The production user interface is a single Streamlit application:
 
 ```bat
 cd /d D:\resinet-idam\ResiNet-IDAM
-.\.venv-ae\Scripts\python.exe -m uvicorn src.api.main:app --reload
+.\.venv-ae\Scripts\activate
+python -m streamlit run app.py
 ```
 
-In a second Command Prompt window:
+Open `http://localhost:8501`. The application provides operations overview,
+detection workspace, alert management, risk assessment, model/data health, and
+administration. The optional FastAPI adapter can be started separately for
+machine-to-machine integrations.
 
-```bat
-cd /d D:\resinet-idam\ResiNet-IDAM\frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173`. The React dashboard provides overview, event explorer, event detail, and measured model
-evaluation views. Identity, device, and asset trust context is explicitly simulated.
-
-## 10. Research and Evaluation
+## 10. Evaluation and limitations
 
 The current OT experiments use the HAI industrial telemetry dataset to investigate anomaly detection with Isolation Forest and an autoencoder.
 
@@ -155,8 +128,7 @@ The current results are preliminary and specific to the implemented experiments.
 
 ## 10. Project Limitations
 
-- The current implementation focuses on the OT anomaly-detection component.
-- The full IT-OT integration and Zero Trust framework remain to be implemented and evaluated.
+- IT detector availability depends on the separately supplied IDS2025 model bundle.
 - Benchmark dataset performance may not directly represent real-world deployment conditions.
 - Further controlled experiments are needed to evaluate generalization to previously unseen attacks.
 - Detection thresholds, preprocessing, and evaluation procedures must be validated carefully to avoid test-data leakage.
@@ -166,7 +138,6 @@ The current results are preliminary and specific to the implemented experiments.
 ```text
 ResiNet-IDAM/
 ├── README.md
-├── OT_SETUP.md
 ├── requirements.txt
 ├── .gitignore
 ├── data/
@@ -174,21 +145,18 @@ ResiNet-IDAM/
 │   └── processed/        # Generated/prepared datasets
 ├── models/               # Locally generated model files
 └── src/
-    ├── prepare_training_data.py
-    ├── prepare_test_data.py
-    ├── scale_features.py
-    ├── train_baseline.py
-    ├── evaluate_baseline.py
-    ├── train_autoencoder.py
-    ├── evaluate_autoencoder.py
-    ├── dataset_report.py
-    └── validate_labels.py
+    ├── application/       # Shared detection orchestration
+    ├── detectors/         # IT and OT detector adapters
+    ├── domain/            # Event and detector contracts
+    ├── infrastructure/   # Configuration and artifact access
+    ├── ui/                # Streamlit presentation package
+    └── zero_trust/        # Contextual risk engine
 ```
 
-The repository structure may evolve as additional components are developed. Large datasets and generated model binaries are not necessarily stored in Git.
+Large datasets, trained model binaries, and local databases are deployment artifacts and are not stored in Git.
 
-## 12. Research Goal
+## 12. Operational boundary
 
-The long-term goal of ResiNet-IDAM is to investigate how anomaly detection, contextual risk assessment, and Zero Trust principles can work together to improve security monitoring across interconnected IT and OT environments.
-
-The framework will be evaluated incrementally, with the current OT implementation serving as an initial component of the larger system.
+The system is a security-monitoring decision-support application. Identity,
+device, and asset context are currently supplied as normalized deployment
+inputs; the risk engine does not authorize automatic industrial actions.
