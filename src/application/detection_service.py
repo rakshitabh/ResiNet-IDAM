@@ -1,34 +1,35 @@
-"""Single orchestration path for IT/OT detection and risk assessment."""
+"""Application orchestration for detector scoring and event persistence."""
 
 from __future__ import annotations
 
+import inspect
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from src.api.database import EventStore
-from src.domain.events import DetectionResult, ReviewStatus, SecurityEvent, Source
 from src.detectors.registry import build_registry
+from src.domain.events import DetectionResult, ReviewStatus, SecurityEvent, Source
 from src.zero_trust.risk_engine import RiskInput, calculate_risk
 
 
 class DetectionService:
-    def __init__(self, root: Path, database_path: Path) -> None:
-        self.root = root
-        self.detectors = build_registry(root)
-        self.store = EventStore(database_path)
+    def __init__(self, root: str | Path, database_path: str | Path) -> None:
+        self.root = Path(root)
+        self.store = EventStore(Path(database_path))
+        self._registry = build_registry(self.root)
 
     def detector(self, source: Source) -> Any:
-        detector = self.detectors.get(source)
-        if detector is None:
-            raise ValueError(f"Unsupported detector source: {source}")
-        if not detector.available():
-            raise RuntimeError(f"{detector.name} artifacts are unavailable")
-        return detector
+        if source not in self._registry:
+            raise ValueError(f"Unsupported source: {source}")
+        return self._registry[source]
 
     def availability(self) -> dict[str, bool]:
-        return {source: detector.available() for source, detector in self.detectors.items()}
+        return {
+            source: detector.available() if hasattr(detector, "available") else True
+            for source, detector in self._registry.items()
+        }
 
     def detect(
         self,
@@ -44,14 +45,25 @@ class DetectionService:
         asset_criticality: float,
         behavior_deviation: float,
         review_status: ReviewStatus = "NEW",
+        config_name: str | None = None,
     ) -> dict[str, Any]:
-        result: DetectionResult = self.detector(source).detect(
-            values,
-            timestamp=timestamp,
-            asset_id=asset_id,
-            device_id=device_id,
-        )
-        anomaly_severity = min(result.anomaly_score / result.threshold, 1.0)
+        detector = self.detector(source)
+
+        detect_kwargs: dict[str, Any] = {
+            "timestamp": timestamp,
+            "asset_id": asset_id,
+            "device_id": device_id,
+        }
+        if config_name is not None and "config_name" in inspect.signature(detector.detect).parameters:
+            detect_kwargs["config_name"] = config_name
+
+        result: DetectionResult = detector.detect(values, **detect_kwargs)
+
+        if result.threshold and result.threshold > 0:
+            anomaly_severity = min(result.anomaly_score / result.threshold, 1.0)
+        else:
+            anomaly_severity = 0.0
+
         risk = calculate_risk(
             RiskInput(
                 identity_id=identity_id,
@@ -64,6 +76,7 @@ class DetectionService:
                 behavior_deviation=behavior_deviation,
             )
         )
+
         event = SecurityEvent(
             event_id=str(uuid4()),
             source=result.source,
@@ -85,4 +98,5 @@ class DetectionService:
             risk_components=risk["risk_components"],
             metadata={**result.metadata, "source": result.source},
         )
+
         return self.store.create_event(event)
