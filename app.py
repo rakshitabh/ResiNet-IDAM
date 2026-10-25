@@ -224,11 +224,11 @@ def render_overview(service: DetectionService) -> None:
     if events:
         frame = pd.DataFrame(events)
         if "timestamp" in frame.columns:
-            frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce")
+            frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce", utc=True)
             frame["is_stale"] = (
                 frame["review_status"].isin(["NEW", "IN_REVIEW"])
                 & (
-                    pd.Timestamp.utcnow().tz_localize(None) - frame["timestamp"]
+                    pd.Timestamp.now(tz="UTC") - frame["timestamp"]
                     > pd.Timedelta(hours=24)
                 )
             )
@@ -437,11 +437,11 @@ def render_alerts(service: DetectionService) -> None:
     table = pd.DataFrame(events)
 
     if "timestamp" in table.columns:
-        table["timestamp"] = pd.to_datetime(table["timestamp"], errors="coerce")
+        table["timestamp"] = pd.to_datetime(table["timestamp"], errors="coerce", utc=True)
         table["is_stale"] = (
             table["review_status"].isin(["NEW", "IN_REVIEW"])
             & (
-                pd.Timestamp.utcnow().tz_localize(None) - table["timestamp"]
+                pd.Timestamp.now(tz="UTC") - table["timestamp"]
                 > pd.Timedelta(hours=24)
             )
         )
