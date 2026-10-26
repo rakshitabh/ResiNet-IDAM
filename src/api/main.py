@@ -12,7 +12,6 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from tensorflow import keras
 
 from src.api.database import EventStore
 from src.application.detection_service import DetectionService
@@ -21,8 +20,8 @@ from src.zero_trust.risk_engine import RiskInput, calculate_risk
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODEL_PATH = ROOT / "models" / "autoencoder.keras"
-THRESHOLD_PATH = ROOT / "models" / "anomaly_threshold.json"
+MODEL_PATH = ROOT / "models" / "ot_autoencoder.keras" if (ROOT / "models" / "ot_autoencoder.keras").exists() else ROOT / "models" / "autoencoder.keras"
+THRESHOLD_PATH = ROOT / "models" / "autoencoder_threshold.json" if (ROOT / "models" / "autoencoder_threshold.json").exists() else ROOT / "models" / "anomaly_threshold.json"
 METRICS_PATH = ROOT / "reports" / "baseline_metrics.json"
 DATASET_PROFILE_PATH = ROOT / "reports" / "dataset-profile.json"
 DATABASE_PATH = ROOT / "data" / "resinet-events.sqlite3"
@@ -167,7 +166,7 @@ def model_info() -> dict[str, Any]:
     return {
         "model_version": service.metadata.get("model_version"),
         "threshold": service.metadata["threshold"],
-        "threshold_selection": service.metadata["threshold_selection"],
+        "threshold_selection": service.metadata.get("threshold_selection", f"percentile_{service.metadata.get('threshold_percentile', 99)}"),
         "feature_count": len(service.metadata["feature_columns"]),
         "feature_columns": service.metadata["feature_columns"],
     }

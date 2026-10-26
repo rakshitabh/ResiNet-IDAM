@@ -71,8 +71,8 @@ npm run dev
 
 Command Prompt:
 
-```bat
-cd /d D:\resinet-idam\ResiNet-IDAM\frontend
+```bash
+cd frontend
 npm install
 npm run dev
 ```

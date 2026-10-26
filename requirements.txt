@@ -11,3 +11,4 @@ fastapi
 uvicorn
 httpx
 psutil
+h5py

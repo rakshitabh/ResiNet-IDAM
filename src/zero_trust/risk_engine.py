@@ -102,6 +102,94 @@ def calculate_risk(data: RiskInput) -> dict[str, Any]:
     }
 
 
+def evaluate_zero_trust_decision(event: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate transparent Zero-Trust access rules for decision-support."""
+    context = event.get("context", {})
+    identity_trust = float(context.get("identity_trust", 1.0))
+    device_trust = float(context.get("device_trust", 1.0))
+    asset_criticality = float(context.get("asset_criticality", 0.0))
+    anomaly_severity = float(context.get("anomaly_severity", 0.0))
+    behavior_deviation = float(context.get("behavior_deviation", 0.0))
+    risk_score = float(event.get("risk_score", 0.0))
+
+    rule_traces: list[dict[str, str]] = []
+
+    if anomaly_severity >= 0.80 and behavior_deviation >= 0.65 and asset_criticality >= 0.60:
+        rule_traces.append(
+            {
+                "Rule": "R1: Coordinated attack posture",
+                "Condition": "anomaly_severity >= 0.80 and behavior_deviation >= 0.65 and asset_criticality >= 0.60",
+                "Evaluated": (
+                    f"anomaly={anomaly_severity:.2f}, "
+                    f"behavior={behavior_deviation:.2f}, "
+                    f"asset={asset_criticality:.2f}"
+                ),
+                "Result": "TRIGGERED",
+            }
+        )
+
+    if identity_trust < 0.40 and device_trust < 0.40 and risk_score >= 60:
+        rule_traces.append(
+            {
+                "Rule": "R2: Compromised identity and device trust",
+                "Condition": "identity_trust < 0.40 and device_trust < 0.40 and risk_score >= 60",
+                "Evaluated": (
+                    f"identity={identity_trust:.2f}, "
+                    f"device={device_trust:.2f}, "
+                    f"risk={risk_score:.1f}"
+                ),
+                "Result": "TRIGGERED",
+            }
+        )
+
+    if risk_score >= 50 or identity_trust < 0.60 or device_trust < 0.60:
+        rule_traces.append(
+            {
+                "Rule": "R3: Elevated access risk",
+                "Condition": "risk_score >= 50 or identity_trust < 0.60 or device_trust < 0.60",
+                "Evaluated": (
+                    f"risk={risk_score:.1f}, "
+                    f"identity={identity_trust:.2f}, "
+                    f"device={device_trust:.2f}"
+                ),
+                "Result": "TRIGGERED",
+            }
+        )
+
+    if (
+        anomaly_severity >= 0.80
+        and behavior_deviation >= 0.65
+        and asset_criticality >= 0.60
+    ) or (
+        identity_trust < 0.40 and device_trust < 0.40 and risk_score >= 60
+    ) or risk_score >= 90:
+        verdict = "DENY"
+        reason = (
+            "Critical attack posture detected. The event combines abnormal behavior, "
+            "high asset criticality, and weakened identity/device trust. Access must be blocked."
+        )
+    elif risk_score >= 50 or identity_trust < 0.60 or device_trust < 0.60:
+        verdict = "REQUIRE VERIFICATION"
+        reason = (
+            "Potential security risk detected. Re-authentication, identity validation, "
+            "and additional behavioral review are required before access continues."
+        )
+    else:
+        verdict = "ALLOW"
+        reason = (
+            "Contextual risk is within acceptable bounds. Identity, device posture, "
+            "and behavior indicators are consistent with trusted operations."
+        )
+
+    return {
+        "verdict": verdict,
+        "reason": reason,
+        "risk_score": risk_score,
+        "rule_traces": rule_traces,
+        "is_automatic_action": False,  # Strict boundary: human approval mandatory
+    }
+
+
 if __name__ == "__main__":
     example = RiskInput(
         identity_trust=0.85,

@@ -15,12 +15,23 @@ __pycache__/
 
 # Original and generated datasets
 data/raw/
-data/processed/
+data/processed/hai-train-features.csv
+data/processed/hai-train-scaled.csv
 data/it/
 dataset/raw/
 
 # Trained models and generated thresholds
-models/
+models/*
+!models/*.json
+!models/ot_autoencoder_weights.npz
+!models/it_realistic/
+models/it_realistic/*
+!models/it_realistic/*.json
+!models/it_realistic/random_forest_all.joblib
+!models/it_realistic/random_forest_no_ports.joblib
+!models/it_realistic/loco_iforest_all_botnet_ares.joblib
+!models/it_realistic/loco_iforest_no_ports_botnet_ares.joblib
+!models/it_realistic/label_encoder.joblib
 
 # Generated reports and local databases
 reports/it/

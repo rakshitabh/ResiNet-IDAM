@@ -107,9 +107,7 @@ Training must not proceed until the normal-only training assumption and scaler p
 
 The production user interface is a single Streamlit application:
 
-```bat
-cd /d D:\resinet-idam\ResiNet-IDAM
-.\.venv-ae\Scripts\activate
+```bash
 python -m streamlit run app.py
 ```
 
@@ -128,10 +126,10 @@ The current results are preliminary and specific to the implemented experiments.
 
 ## 10. Project Limitations
 
-- IT detector availability depends on the separately supplied IDS2025 model bundle.
-- Benchmark dataset performance may not directly represent real-world deployment conditions.
-- Further controlled experiments are needed to evaluate generalization to previously unseen attacks.
-- Detection thresholds, preprocessing, and evaluation procedures must be validated carefully to avoid test-data leakage.
+1. **Results Remain Dataset-Specific**: Benchmark performance evaluated on IDS2025 and HAI datasets reflects specific experimental configurations and may not directly represent varied industrial environments.
+2. **Synthetic Held-Out-Class Evaluation**: Held-out-class (LOCO) evaluations are synthetic research approximations and do not constitute proof of real-world zero-day detection. The project is a *synthetic held-out-class evaluation and anomaly-based research prototype for novel intrusion detection*, not a guaranteed zero-day defense.
+3. **No Genuine IT/OT Time-Synchronization**: IT network flow captures and OT industrial physical telemetry were collected from distinct experimental testbeds and are synthetically correlated across cross-domain attack scenarios.
+4. **Decision-Support Boundary**: The framework is strictly a decision-support prototype for security analysts. The contextual Zero-Trust engine recommends triage actions (`ALLOW_AND_MONITOR`, `VERIFY_ADDITIONAL_FACTORS`, `RESTRICT_AND_ALERT`) and **never authorizes automatic physical or industrial control actions**.
 
 ## 11. Repository Structure
 

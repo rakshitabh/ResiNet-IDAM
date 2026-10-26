@@ -1,0 +1,7 @@
+{
+  "ot_threshold": 0.821953535079956,
+  "calibrated_gamma": 11.826296467620663,
+  "validation_records": 27314,
+  "test_records": 26686,
+  "validation_bce_loss": 0.24813478436304656
+}

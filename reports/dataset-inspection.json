@@ -3,7 +3,7 @@
   "dataset": "HAI",
   "files": {
     "training": {
-      "path": "D:\\resinet-idam\\ResiNet-IDAM\\data\\processed\\hai-train-scaled.csv",
+      "path": "C:\\ResiNet-IDAM\\data\\processed\\hai-train-scaled.csv",
       "exists": true,
       "rows": 280800,
       "columns": 67,
@@ -712,7 +712,7 @@
       }
     },
     "test": {
-      "path": "D:\\resinet-idam\\ResiNet-IDAM\\data\\processed\\hai-test-scaled.csv",
+      "path": "C:\\ResiNet-IDAM\\data\\processed\\hai-test-scaled.csv",
       "exists": true,
       "rows": 54000,
       "columns": 68,
