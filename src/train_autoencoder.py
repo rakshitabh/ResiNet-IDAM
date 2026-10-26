@@ -1,3 +1,6 @@
+"""Train the reproducible HAI dense Autoencoder baseline."""
+
+from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -9,106 +12,113 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 
-# Project paths
-DATA_PATH = Path("data/processed/hai-train-scaled.csv")
-MODEL_DIR = Path("models")
-MODEL_PATH = MODEL_DIR / "ot_autoencoder.keras"
-THRESHOLD_PATH = MODEL_DIR / "autoencoder_threshold.json"
+ROOT = Path(__file__).resolve().parents[1]
+DATA_PATH = ROOT / "data" / "processed" / "hai-train-scaled.csv"
+MODEL_DIR = ROOT / "models"
+MODEL_PATH = MODEL_DIR / "autoencoder.keras"
+THRESHOLD_PATH = MODEL_DIR / "anomaly_threshold.json"
+CONFIG_PATH = MODEL_DIR / "training_config.json"
 
-# Keep training manageable on an 8 GB RAM machine
+SEED = 42
 EPOCHS = 20
 BATCH_SIZE = 512
+VALIDATION_FRACTION = 0.20
 THRESHOLD_PERCENTILE = 99
 
 
-def main():
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"Dataset not found: {DATA_PATH}")
-
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    tf.keras.utils.set_random_seed(42)
-
-    print("Loading HAI training data...")
-    df = pd.read_csv(DATA_PATH)
-
-    # Timestamp is metadata, not a model input.
-    feature_columns = [
-        column for column in df.columns if column != "timestamp"
-    ]
-
-    # float32 reduces memory usage.
-    X = df[feature_columns].to_numpy(dtype=np.float32)
-
-    if not np.isfinite(X).all():
-        raise ValueError("Dataset contains NaN or infinite feature values.")
-
-    # Chronological split: first 80% for training, final 20% for validation.
-    split_index = int(len(X) * 0.80)
-    X_train = X[:split_index]
-    X_val = X[split_index:]
-
-    print(f"Total rows: {len(X):,}")
-    print(f"Training rows: {len(X_train):,}")
-    print(f"Validation rows: {len(X_val):,}")
-    print(f"Features: {X.shape[1]}")
-
-    # Small neural network that learns to reconstruct its input.
-    inputs = keras.Input(shape=(X.shape[1],))
+def build_model(feature_count: int) -> keras.Model:
+    inputs = keras.Input(shape=(feature_count,))
     encoded = layers.Dense(32, activation="relu")(inputs)
     encoded = layers.Dense(16, activation="relu")(encoded)
     decoded = layers.Dense(32, activation="relu")(encoded)
-    outputs = layers.Dense(X.shape[1], activation="linear")(decoded)
-
-    model = keras.Model(inputs, outputs, name="ot_autoencoder")
+    outputs = layers.Dense(feature_count, activation="linear")(decoded)
+    model = keras.Model(inputs, outputs, name="dense_autoencoder_baseline")
     model.compile(optimizer="adam", loss="mse")
+    return model
 
-    early_stopping = keras.callbacks.EarlyStopping(
-        monitor="val_loss",
-        patience=3,
-        restore_best_weights=True
-    )
 
-    print("\nTraining Autoencoder...")
-    model.fit(
+def main() -> None:
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(f"Dataset not found: {DATA_PATH}")
+
+    tf.keras.utils.set_random_seed(SEED)
+    frame = pd.read_csv(DATA_PATH)
+    feature_columns = [
+        column for column in frame.columns if column not in {"timestamp", "label"}
+    ]
+    if not feature_columns:
+        raise ValueError("No model features found in the training dataset.")
+
+    values = frame[feature_columns].to_numpy(dtype=np.float32)
+    if not np.isfinite(values).all():
+        raise ValueError("Training features contain NaN or infinite values.")
+
+    split_index = int(len(values) * (1 - VALIDATION_FRACTION))
+    X_train = values[:split_index]
+    X_validation = values[split_index:]
+    model = build_model(len(feature_columns))
+    history = model.fit(
         X_train,
         X_train,
-        validation_data=(X_val, X_val),
+        validation_data=(X_validation, X_validation),
         epochs=EPOCHS,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        callbacks=[early_stopping],
-        verbose=1
+        callbacks=[
+            keras.callbacks.EarlyStopping(
+                monitor="val_loss",
+                patience=3,
+                restore_best_weights=True,
+            )
+        ],
+        verbose=1,
     )
 
-    # Reconstruction error: mean squared difference per row.
-    print("\nCalculating validation reconstruction errors...")
-    reconstructed = model.predict(X_val, batch_size=BATCH_SIZE, verbose=0)
-    errors = np.mean(np.square(X_val - reconstructed), axis=1)
-
+    reconstructed = model.predict(
+        X_validation, batch_size=BATCH_SIZE, verbose=0
+    )
+    errors = np.mean(np.square(X_validation - reconstructed), axis=1)
     threshold = float(np.percentile(errors, THRESHOLD_PERCENTILE))
-    flagged = int(np.sum(errors > threshold))
 
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
     model.save(MODEL_PATH)
-
-    metadata = {
-        "threshold": threshold,
-        "threshold_percentile": THRESHOLD_PERCENTILE,
-        "feature_columns": feature_columns,
-        "training_rows": int(len(X_train)),
-        "validation_rows": int(len(X_val)),
-        "features": int(X.shape[1])
-    }
-
-    THRESHOLD_PATH.write_text(json.dumps(metadata, indent=2))
-
-    print("\nTraining complete.")
-    print(f"Model saved to: {MODEL_PATH}")
-    print(f"Threshold saved to: {THRESHOLD_PATH}")
-    print(f"Validation threshold: {threshold:.8f}")
-    print(
-        f"Validation rows flagged: {flagged:,}/{len(X_val):,} "
-        f"({flagged / len(X_val) * 100:.2f}%)"
+    THRESHOLD_PATH.write_text(
+        json.dumps(
+            {
+                "model_version": "dense-autoencoder-baseline-v1",
+                "threshold": threshold,
+                "threshold_percentile": THRESHOLD_PERCENTILE,
+                "feature_columns": feature_columns,
+                "training_rows": len(X_train),
+                "validation_rows": len(X_validation),
+                "features": len(feature_columns),
+                "threshold_selection": (
+                    "99th percentile of chronological normal validation errors"
+                ),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
     )
+    CONFIG_PATH.write_text(
+        json.dumps(
+            {
+                "seed": SEED,
+                "epochs": EPOCHS,
+                "batch_size": BATCH_SIZE,
+                "architecture": [32, 16, 32, len(feature_columns)],
+                "split": "chronological 80/20",
+                "shuffle": False,
+                "optimizer": "adam",
+                "loss": "mse",
+                "final_epoch_count": len(history.history["loss"]),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    print(f"Model saved: {MODEL_PATH}")
+    print(f"Threshold saved: {THRESHOLD_PATH}")
 
 
 if __name__ == "__main__":

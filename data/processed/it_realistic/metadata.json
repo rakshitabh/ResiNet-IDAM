@@ -3,6 +3,7 @@
   "split_methodology": "Contiguous Sequential 80/20 Block Split (Earlier 80% train, Later 20% test)",
   "limitation_disclaimer": "This split divides each contiguous label block chronologically along the row order of IDS2025.xlsx. It forces out-of-burst extrapolation rather than random interpolation. However, it cannot be claimed as a true campaign-independent or zero-day evaluation because original timestamps, flow IDs, and campaign metadata are unavailable in the source file.",
   "source_file": "IDS2025.xlsx",
+  "label_column": "newLabel",
   "raw_rows": 91830,
   "rows_after_exact_deduplication": 91744,
   "total_train_rows": 73400,

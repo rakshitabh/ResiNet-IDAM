@@ -1,4 +1,3 @@
-
 # Python environments
 .venv/
 .venv-ae/
@@ -14,37 +13,41 @@ __pycache__/
 .env
 .env.*
 
-# Original datasets
+# Original and generated datasets
 data/raw/
-
-# Large processed training datasets (>100MB GitHub limit)
 data/processed/hai-train-features.csv
 data/processed/hai-train-scaled.csv
+data/it/
+dataset/raw/
 
 # Trained models and generated thresholds
 models/*
+!models/*.json
+!models/ot_autoencoder_weights.npz
 !models/it_realistic/
 models/it_realistic/*
+!models/it_realistic/*.json
 !models/it_realistic/random_forest_all.joblib
 !models/it_realistic/random_forest_no_ports.joblib
 !models/it_realistic/loco_iforest_all_botnet_ares.joblib
 !models/it_realistic/loco_iforest_no_ports_botnet_ares.joblib
 !models/it_realistic/label_encoder.joblib
 
+# Generated reports and local databases
+reports/it/
+data/reports/
+data/*.sqlite3
+*.db
+*.log
+
 # Editor and OS files
 .vscode/
 .DS_Store
 Thumbs.db
 
-# Local SQLite databases and logs
-*.db
-*.log
-
-# IT datasets and generated reports
-data/it/
-dataset/raw/
-reports/it/*
-!reports/it/ids2025_zero_trust_results.csv
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
 
 # Local backup
 app_backup.py

@@ -135,10 +135,14 @@ for error in predictions["reconstruction_error"].to_numpy():
 
     result = calculate_risk(
         RiskInput(
-            anomaly_score=anomaly_score,
-            classification_confidence=CLASSIFICATION_CONFIDENCE,
+            identity_trust=TRUST_SCORE,
+            device_trust=TRUST_SCORE,
             asset_criticality=ASSET_CRITICALITY,
-            trust_score=TRUST_SCORE,
+            anomaly_severity=anomaly_score,
+            behavior_deviation=anomaly_score,
+            identity_id="simulated-ids2025-identity",
+            device_id="simulated-ids2025-device",
+            asset_id="simulated-ids2025-asset",
         )
     )
 
@@ -154,8 +158,14 @@ for error in predictions["reconstruction_error"].to_numpy():
 output = predictions.copy()
 
 output["anomaly_score"] = anomaly_scores
+output["identity_id"] = "simulated-ids2025-identity"
+output["device_id"] = "simulated-ids2025-device"
+output["asset_id"] = "simulated-ids2025-asset"
+output["identity_trust"] = TRUST_SCORE
+output["device_trust"] = TRUST_SCORE
 output["asset_criticality"] = ASSET_CRITICALITY
-output["trust_score"] = TRUST_SCORE
+output["behavior_deviation"] = anomaly_scores
+output["anomaly_severity"] = anomaly_scores
 output["risk_score"] = risk_scores
 output["risk_level"] = risk_levels
 output["recommended_action"] = recommended_actions
