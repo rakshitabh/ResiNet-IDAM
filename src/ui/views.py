@@ -36,7 +36,7 @@ def load_metrics() -> dict[str, Any]:
     return __import__("json").loads(path.read_text(encoding="utf-8"))
 
 
-def resolve_dataset_path(root: str | Path | None = None) -> Path:
+def resolve_dataset_path(root: str | Path | None = None, domain: str = "ot") -> Path:
     project_root = Path(root) if root is not None else ROOT
     candidate_dirs = [
         project_root / "data" / "processed",
@@ -44,17 +44,16 @@ def resolve_dataset_path(root: str | Path | None = None) -> Path:
         project_root / "data",
     ]
 
+    target_files = (
+        ("ids2025_sample.csv", "ids2025_test_scaled.csv", "ids2025_train_scaled.csv")
+        if domain.lower() == "it"
+        else ("hai-test-scaled.csv", "hai-train-scaled.csv")
+    )
+
     for directory in candidate_dirs:
         if not directory.exists():
             continue
-        for name in (
-            "hai-test-scaled.csv",
-            "hai-train-scaled.csv",
-            "ids2025_test_scaled.csv",
-            "ids2025_train_scaled.csv",
-            "train.csv",
-            "test.csv",
-        ):
+        for name in target_files:
             path = directory / name
             if path.exists():
                 return path
@@ -64,14 +63,14 @@ def resolve_dataset_path(root: str | Path | None = None) -> Path:
             return files[0]
 
     raise FileNotFoundError(
-        "No CSV dataset was found in the configured project data folders. "
+        f"No CSV dataset found for domain '{domain}'. "
         "Upload a CSV file or place the processed dataset under data/processed/."
     )
 
 
-def load_dataset(source: str | Path | IO[str] | IO[bytes] | None = None, *, nrows: int | None = None) -> pd.DataFrame:
+def load_dataset(source: str | Path | IO[str] | IO[bytes] | None = None, *, nrows: int | None = None, domain: str = "ot") -> pd.DataFrame:
     if source is None:
-        source = resolve_dataset_path()
+        source = resolve_dataset_path(domain=domain)
 
     if hasattr(source, "read"):
         payload = source.read()
@@ -110,24 +109,34 @@ def render_overview(service: DetectionService) -> None:
         unsafe_allow_html=True,
     )
 
-    st.subheader("Dataset")
-    dataset_mode = st.radio("Source", ["Project data", "Upload CSV"], horizontal=True)
+    st.subheader("Dataset Preview")
+    col_domain, col_mode = st.columns([1, 1])
+    with col_domain:
+        telemetry_domain = st.radio(
+            "Telemetry Domain",
+            ["OT Physical Telemetry (HAI)", "IT Network Flows (IDS2025)"],
+            horizontal=True,
+        )
+    with col_mode:
+        dataset_mode = st.radio("Source", ["Project sample", "Upload CSV"], horizontal=True)
+
+    domain_key = "it" if "IT" in telemetry_domain else "ot"
     dataset_frame: pd.DataFrame | None = None
 
-    if dataset_mode == "Project data":
+    if dataset_mode == "Project sample":
         try:
-            dataset_path = resolve_dataset_path()
+            dataset_path = resolve_dataset_path(domain=domain_key)
         except FileNotFoundError as error:
             st.warning(str(error))
             dataset_frame = pd.DataFrame()
         else:
             st.caption(f"Loaded from {dataset_path}")
-            dataset_frame = load_dataset(dataset_path, nrows=5000)
+            dataset_frame = load_dataset(dataset_path, nrows=5000, domain=domain_key)
     else:
         uploaded = st.file_uploader("Load dataset CSV", type=["csv"])
         if uploaded is not None:
             try:
-                dataset_frame = load_dataset(uploaded, nrows=5000)
+                dataset_frame = load_dataset(uploaded, nrows=5000, domain=domain_key)
             except Exception as error:
                 st.error(f"Could not read uploaded dataset: {error}")
                 dataset_frame = pd.DataFrame()
