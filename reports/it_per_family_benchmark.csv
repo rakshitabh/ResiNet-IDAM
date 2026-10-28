@@ -1,0 +1,7 @@
+Family,Attack Family,Test Sample Count,Random Forest (Supervised),IT Autoencoder (Unsupervised),Isolation Forest (Baseline)
+Botnet ARES,Botnet ARES,375,375/375 (100.00%),9/375 (2.40%),0/375 (0.00%)
+Brute Force,Brute Force,2040,2040/2040 (100.00%),0/2040 (0.00%),0/2040 (0.00%)
+Dos/DDos,Dos/DDos,5191,5188/5191 (99.94%),1491/5191 (28.72%),75/5191 (1.44%)
+Infiltration,Infiltration,6,4/6 (66.67%),2/6 (33.33%),2/6 (33.33%)
+PortScan,PortScan,5082,5080/5082 (99.96%),10/5082 (0.20%),0/5082 (0.00%)
+Web Attack,Web Attack,413,411/413 (99.52%),2/413 (0.48%),0/413 (0.00%)

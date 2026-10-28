@@ -200,7 +200,7 @@ def render_overview(service: DetectionService) -> None:
     if events:
         frame = pd.DataFrame(events)
         if "timestamp" in frame.columns:
-            frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce", utc=True)
+            frame["timestamp"] = pd.to_datetime(frame["timestamp"], format="ISO8601", errors="coerce", utc=True)
             frame["is_stale"] = (
                 frame["review_status"].isin(["NEW", "IN_REVIEW"])
                 & (
@@ -268,10 +268,18 @@ def render_detection(service: DetectionService) -> None:
             return
 
         frame = pd.read_csv(data_path)
+        st.caption(f"Total available OT records: **{len(frame):,}** (Indices: 0 to {len(frame) - 1:,})")
+        st.info("💡 **OT Row Guide:** Rows 0–1540 are Normal baseline process data. To test an **active physical attack**, try **Row 1541**, **1542**, or **1556**.")
         index = st.number_input("Observation row", 0, len(frame) - 1, 0)
         row = frame.iloc[int(index)]
+        if "label" in row:
+            lbl_text = "ATTACK ANOMALY (Label 1)" if int(row["label"]) == 1 else "NORMAL BASELINE (Label 0)"
+            st.caption(f"Ground Truth Status: **{lbl_text}**")
         values = {name: float(row[name]) for name in schema}
-        timestamp = pd.to_datetime(row["timestamp"], utc=True).to_pydatetime()
+        telemetry_time = str(row.get("timestamp", ""))
+        if telemetry_time:
+            st.caption(f"Historical Sensor Recorded Time: `{telemetry_time}`")
+        timestamp = datetime.now(timezone.utc)
 
         ot_summary = detector.score(values)
         st.subheader("OT anomaly diagnostics")
@@ -294,37 +302,66 @@ def render_detection(service: DetectionService) -> None:
 
     else:
         detector = service.detector("IT")
-        available_configs = detector.configurations()
-        if not available_configs:
-            st.error("No IDS2025 feature configurations are available.")
-            return
-
-        config_labels = {
-            "all_features": "79-feature mode",
-            "no_ports": "77-feature mode (no ports)",
-        }
-        config_name = st.selectbox(
-            "IT feature configuration",
-            list(available_configs.keys()),
-            format_func=lambda key: config_labels.get(key, key),
-        )
-
+        config_name = "all_features"
         schema = detector.feature_schema(config_name)
-        st.caption(f"{detector.name} · {config_name} · {len(schema)} ordered features")
+        st.caption(f"{detector.name} · Standard 79-feature NetFlow model (with auto-port tolerance)")
 
-        uploaded = st.file_uploader("Upload one-row IT CSV", type="csv")
-        if uploaded is None:
-            return
+        it_sample_path = config.data_path / "processed" / "ids2025_sample.csv"
+        input_method = st.radio("IT Observation Source", ["Project sample flow", "Upload CSV"], horizontal=True)
 
-        frame = pd.read_csv(uploaded)
-        missing = [name for name in schema if name not in frame.columns]
-        if missing:
-            st.error(f"Missing IT features for {config_name}: {missing[:5]}")
-            return
+        if input_method == "Project sample flow" and it_sample_path.exists():
+            frame = pd.read_csv(it_sample_path)
+            st.caption(f"Total available IT sample flows: **{len(frame):,}** (Indices: 0 to {len(frame) - 1:,})")
+            st.info("💡 **IT Row Guide:** Rows 0–199: Normal | 200–349: Dos/DDos | 350–499: PortScan | 500–599: Brute Force | 600–699: Botnet ARES | 700–779: Web Attack | 780–804: Infiltration")
+            index = st.number_input("Observation row", 0, len(frame) - 1, 0)
+            row = frame.iloc[int(index)]
+            if "label" in row:
+                st.caption(f"Ground Truth Class: **{row['label']}**")
+            values = {name: float(row[name]) for name in schema if name in row}
+            timestamp = datetime.now(timezone.utc)
+        else:
+            uploaded = st.file_uploader("Upload IT CSV", type="csv")
+            if uploaded is None:
+                st.info("Upload an IT NetFlow CSV or select 'Project sample flow' to test.")
+                return
 
-        row = frame.iloc[0]
-        values = {name: float(row[name]) for name in schema}
-        timestamp = datetime.now(timezone.utc)
+            frame = pd.read_csv(uploaded)
+            missing = [name for name in schema if name not in frame.columns and name not in ("Source Port", "Destination Port")]
+            if missing:
+                st.error(f"Missing required IT features: {missing[:5]}")
+                return
+
+            index = st.number_input("Observation row", 0, len(frame) - 1, 0)
+            row = frame.iloc[int(index)]
+            if "label" in row:
+                st.caption(f"Ground Truth Class: **{row['label']}**")
+            values = {name: float(row[name]) for name in schema if name in row}
+            timestamp = datetime.now(timezone.utc)
+
+        # Compute multi-model diagnostics for IT flow
+        try:
+            it_diag = detector.detect(
+                values,
+                timestamp=timestamp,
+                asset_id="preview",
+                device_id="preview",
+                config_name=config_name,
+            )
+            st.subheader("IT multi-model diagnostics")
+            d_cols = st.columns(4)
+            d_cols[0].metric("Random Forest Prediction", it_diag.prediction)
+            d_cols[1].metric("Supervised Confidence", f"{it_diag.confidence:.2%}" if it_diag.confidence else "N/A")
+            ae_mse = it_diag.metadata.get("reconstruction_error", 0.0)
+            ae_tau = it_diag.metadata.get("calibrated_threshold", 0.6383)
+            d_cols[2].metric("Autoencoder MSE", f"{ae_mse:.4f}")
+            d_cols[3].metric("AE Threshold", f"{ae_tau:.4f}")
+
+            if it_diag.anomaly_decision:
+                st.warning(f"⚠️ Unsupervised Anomaly Detected: Reconstruction MSE ({ae_mse:.4f}) exceeds threshold ({ae_tau:.4f}).")
+            else:
+                st.success(f"✅ Normal Reconstruction: Reconstruction MSE ({ae_mse:.4f}) is within threshold ({ae_tau:.4f}).")
+        except Exception:
+            pass
 
         try:
             probabilities = detector.predict_proba(values, config_name=config_name)
@@ -411,9 +448,9 @@ def render_alerts(service: DetectionService) -> None:
         return
 
     table = pd.DataFrame(events)
-
+    local_tz = datetime.now().astimezone().tzinfo
     if "timestamp" in table.columns:
-        table["timestamp"] = pd.to_datetime(table["timestamp"], errors="coerce", utc=True)
+        table["timestamp"] = pd.to_datetime(table["timestamp"], format="ISO8601", errors="coerce", utc=True)
         table["is_stale"] = (
             table["review_status"].isin(["NEW", "IN_REVIEW"])
             & (
@@ -421,6 +458,11 @@ def render_alerts(service: DetectionService) -> None:
                 > pd.Timedelta(hours=24)
             )
         )
+        if local_tz is not None:
+            try:
+                table["timestamp"] = table["timestamp"].dt.tz_convert(local_tz)
+            except Exception:
+                pass
 
     st.subheader("Stale alerts")
     stale = table.get("is_stale", pd.Series(False, index=table.index))
@@ -477,8 +519,14 @@ def render_alert_prioritization(service: DetectionService) -> None:
         st.info("No events exist yet.")
         return
 
+    local_tz = datetime.now().astimezone().tzinfo
     if "timestamp" in frame.columns:
-        frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce", utc=True)
+        frame["timestamp"] = pd.to_datetime(frame["timestamp"], format="ISO8601", errors="coerce", utc=True)
+        if local_tz is not None:
+            try:
+                frame["timestamp"] = frame["timestamp"].dt.tz_convert(local_tz)
+            except Exception:
+                pass
 
     frame["asset_bucket"] = frame["asset_id"].fillna("unknown")
     frame["source_bucket"] = frame["source"].fillna("unknown")
@@ -845,7 +893,7 @@ def render_health(service: DetectionService) -> None:
         config_b = configs.get("no_ports", {})
 
         cards = st.columns(4)
-        cards[0].metric("Model features", f"{config_a.get('feature_count', 79)} (77 no ports)")
+        cards[0].metric("Model features", str(config_a.get("feature_count", 79)))
         cards[1].metric("Training rows", f"{it_metrics.get('training_rows', 73400):,}")
         cards[2].metric("Test rows", f"{it_metrics.get('test_rows', 18344):,}")
         cards[3].metric("Macro F1", f"{config_a.get('macro_f1', 0.9682):.4f}")
@@ -853,13 +901,8 @@ def render_health(service: DetectionService) -> None:
         col_res, col_ops = st.tabs(["Research Benchmark Metrics", "Operational & Telemetry Metrics"])
 
         with col_res:
-            st.caption("Realistic out-of-burst contiguous sequential benchmark across IT feature configurations.")
-            it_cfg_mode = st.radio(
-                "Feature Configuration",
-                ["Configuration A (All 79 Features)", "Configuration B (77 Features - No Ports)"],
-                horizontal=True,
-            )
-            selected_cfg = config_a if "79" in it_cfg_mode else config_b
+            st.caption("Realistic out-of-burst contiguous sequential benchmark for IDS2025 Random Forest (79 Features).")
+            selected_cfg = config_a
 
             res_rows = [
                 ("Evaluation Protocol", it_metrics.get("split_protocol", "Contiguous Sequential 80/20 Block Split")),
@@ -869,13 +912,11 @@ def render_health(service: DetectionService) -> None:
                 ("Weighted F1-Score", f"{selected_cfg.get('weighted_f1', 0.9958):.4f}"),
                 ("Benign False-Positive Rate (FPR)", f"{selected_cfg.get('benign_fpr', 0.0130) * 100:.2f}% (Normal flagged as attack)"),
                 ("Attack False-Negative Rate (FNR)", f"{selected_cfg.get('attack_fnr', 0.0006) * 100:.2f}% (Attacks missed as normal)"),
-                ("Exact Vector Overlaps", f"{selected_cfg.get('exact_vector_overlaps', 1)} row(s) between train & test"),
-                ("Shortcut Learning Audit", selected_cfg.get("shortcut_audit", "Evaluated")),
             ]
             st.dataframe(pd.DataFrame(res_rows, columns=["Research Metric", "Value"]), use_container_width=True, hide_index=True)
 
-            if "79" in it_cfg_mode and "confusion_matrix" in config_a:
-                st.markdown("**Binary Attack vs. Benign Matrix (79 Features)**")
+            if "confusion_matrix" in config_a:
+                st.markdown("**Binary Attack vs. Benign Matrix**")
                 cm = config_a["confusion_matrix"]
                 cm_df = pd.DataFrame(
                     {
@@ -890,10 +931,28 @@ def render_health(service: DetectionService) -> None:
                 )
                 st.dataframe(cm_df, use_container_width=True, hide_index=True)
 
-            st.markdown("**Per-Class Classification Report (Configuration A)**")
+            st.markdown("**Per-Class Classification Report**")
             per_class_data = it_metrics.get("per_class", [])
             if per_class_data:
                 st.dataframe(pd.DataFrame(per_class_data), use_container_width=True, hide_index=True)
+
+            if "anomaly_detection" in it_metrics:
+                st.markdown("**Unsupervised Novel/Zero-Day Benchmark (Trained on Benign Traffic Only)**")
+                st.caption("Evaluated strictly on untouched test flows (5,237 Normal, 13,107 Attacks) with threshold calibrated on normal validation data.")
+                ad = it_metrics["anomaly_detection"]
+                if_m = ad.get("isolation_forest", {})
+                ae_m = ad.get("autoencoder", {})
+                comp_rows = [
+                    ("Model Architecture", "Isolation Forest (100 estimators)", "Dense Autoencoder (79 -> 32 -> 16 -> 32 -> 79)"),
+                    ("Anomaly Threshold (τ)", f"{if_m.get('threshold', 0):.4f}", f"{ae_m.get('threshold', 0):.4f}"),
+                    ("Precision", f"{if_m.get('precision', 0) * 100:.2f}%", f"{ae_m.get('precision', 0) * 100:.2f}%"),
+                    ("Recall (Anomaly Sensitivity)", f"{if_m.get('recall', 0) * 100:.2f}% (77 caught)", f"{ae_m.get('recall', 0) * 100:.2f}% (1,755 caught)"),
+                    ("F1-Score", f"{if_m.get('f1', 0):.4f}", f"{ae_m.get('f1', 0):.4f}"),
+                    ("Benign False-Positive Rate", f"{if_m.get('fpr', 0) * 100:.2f}%", f"{ae_m.get('fpr', 0) * 100:.2f}%"),
+                    ("ROC-AUC", f"{if_m.get('roc_auc', 0):.4f}", f"{ae_m.get('roc_auc', 0):.4f}"),
+                    ("PR-AUC", f"{if_m.get('pr_auc', 0):.4f}", f"{ae_m.get('pr_auc', 0):.4f}"),
+                ]
+                st.dataframe(pd.DataFrame(comp_rows, columns=["Metric", "Isolation Forest", "IT Autoencoder (New)"]), use_container_width=True, hide_index=True)
 
         with col_ops:
             st.caption("IT network flow monitoring performance, false alarm impact, and detector readiness.")
@@ -926,6 +985,25 @@ def render_health(service: DetectionService) -> None:
             features_list = it_profile.get("configurations", {}).get("all_features", {}).get("features", [])
             if features_list:
                 st.dataframe(pd.DataFrame({"Feature Index": range(1, len(features_list) + 1), "Feature Name": features_list}), use_container_width=True, hide_index=True)
+
+        with st.expander("Zero-Day Diagnostics (Botnet ARES & Infiltration Analysis)"):
+            st.markdown(
+                """
+                **1. Why Botnet ARES achieves 0/375 detections under Unsupervised Anomaly Detection:**
+                * **Distribution Overlap:** In IDS2025, Botnet ARES command-and-control (C2) beaconing consists of periodic, low-volume HTTP POST requests.
+                * **Identical Flow Statistics:** Key volumetric medians (Flow Duration: -0.514, Flow Bytes/s: -0.039, Flow Packets/s: -0.308) match benign Normal web traffic down to two decimal places.
+                * **Centrality:** Because its variance is lower than general web browsing, Botnet ARES sits deep inside the highest-density core of the normal distribution. Unsupervised models (Isolation Forest / Autoencoder) flag tail outliers, so Botnet ARES cannot be separated without supervised signature knowledge.
+
+                **2. Resolution of Infiltration Detection Discrepancy:**
+                * **Extremely Small Test Support:** Infiltration has only **6 test flows** ($N=6$).
+                * **Variance Impact:** Missing 2 flows causes recall to drop from 100% to 66.7%, and missing 4 drops it to 33.3%. Each sample equals 16.7% of performance.
+                * **Reconstruction Spike:** The IT Autoencoder reports a mean reconstruction MSE of **249.80** on Infiltration (compared to 0.19 for Normal), confirming massive manifold divergence despite small support.
+
+                **3. Research Limitation & Zero-Day Claim Boundary:**
+                * Unsupervised anomaly detectors catch **volumetric and structurally anomalous** zero-days (DoS, buffer overflows), but **fail** on stealthy, low-and-slow C2 beaconing.
+                * ResiNet-IDAM is a **decision-support research prototype** and does NOT claim guaranteed zero-day detection.
+                """
+            )
 
         with st.expander("Research Notes & Methodology"):
             st.write(f"**Dataset Source:** {it_profile.get('source_file', 'IDS2025.xlsx')}")

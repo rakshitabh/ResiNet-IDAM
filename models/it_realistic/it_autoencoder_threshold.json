@@ -1,0 +1,19 @@
+{
+  "model_name": "IT NetFlow 4-Layer Autoencoder (79 -> 32 -> 16 -> 32 -> 79)",
+  "selection_rule": "Predefined nominal 1% validation false-positive-rate target (99.0th percentile of normal validation reconstruction error)",
+  "validation_split": "Later 20% of Normal training partition (4,188 contiguous samples)",
+  "threshold": 0.6383106708526611,
+  "val_measured_fpr": 0.01002865329512894,
+  "test_measured_fpr": 0.013366431162879512,
+  "test_precision": 0.9558080808080808,
+  "test_recall": 0.11551079575799192,
+  "test_f1": 0.2061125859369682,
+  "roc_auc": 0.7686606263142314,
+  "pr_auc": 0.866836015159695,
+  "feature_count": 79,
+  "trained_normal_samples": 16748,
+  "validation_normal_samples": 4188,
+  "validation_mean_mse": 0.07656915485858917,
+  "nominal_target_achieved": true,
+  "limitation_note": "Validation FPR is 1.00% by rank percentile definition, but test FPR is 1.32% due to out-of-burst generalization variance."
+}

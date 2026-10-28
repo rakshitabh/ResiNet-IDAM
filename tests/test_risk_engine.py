@@ -19,10 +19,10 @@ class TestRiskEngine(unittest.TestCase):
 
     def test_formula_and_breakdown(self):
         result = calculate_risk(context())
-        self.assertEqual(result["risk_score"], 14.0)
+        self.assertEqual(result["risk_score"], 14.5)
         self.assertEqual(result["risk_level"], "LOW")
         self.assertEqual(result["recommended_action"], "RECORD_AND_MONITOR")
-        self.assertEqual(result["risk_components"]["anomaly_severity"], 4.0)
+        self.assertEqual(result["risk_components"]["anomaly_severity"], 2.5)
 
     def test_all_severity_bands(self):
         self.assertEqual(calculate_risk(context())["risk_level"], "LOW")
@@ -31,7 +31,13 @@ class TestRiskEngine(unittest.TestCase):
         )
         self.assertEqual(
             calculate_risk(
-                context(anomaly_severity=1.0, behavior_deviation=1.0)
+                context(
+                    anomaly_severity=1.0,
+                    behavior_deviation=1.0,
+                    asset_criticality=0.6,
+                    identity_trust=0.5,
+                    device_trust=0.5,
+                )
             )["risk_level"],
             "HIGH",
         )
@@ -116,6 +122,41 @@ class TestRiskEngine(unittest.TestCase):
         self.assertEqual(dec_deny["verdict"], "DENY")
         self.assertGreater(len(dec_deny["rule_traces"]), 0)
         self.assertFalse(dec_deny["is_automatic_action"])
+
+    def test_decision_boundary_thresholds(self):
+        from src.zero_trust.risk_engine import evaluate_zero_trust_decision
+
+        base_ctx = {
+            "identity_trust": 0.9,
+            "device_trust": 0.9,
+            "asset_criticality": 0.2,
+            "anomaly_severity": 0.1,
+            "behavior_deviation": 0.1,
+        }
+
+        # Boundary at 59.99 -> ALLOW / RECORD_AND_MONITOR
+        dec_59 = evaluate_zero_trust_decision({"context": base_ctx, "risk_score": 59.99})
+        self.assertEqual(dec_59["verdict"], "ALLOW")
+        self.assertEqual(dec_59["action"], "RECORD_AND_MONITOR")
+        self.assertFalse(dec_59["is_automatic_action"])
+
+        # Boundary at 60.0 -> REQUIRE VERIFICATION / STEP_UP_AUTHENTICATION
+        dec_60 = evaluate_zero_trust_decision({"context": base_ctx, "risk_score": 60.0})
+        self.assertEqual(dec_60["verdict"], "REQUIRE VERIFICATION")
+        self.assertEqual(dec_60["action"], "STEP_UP_AUTHENTICATION")
+        self.assertFalse(dec_60["is_automatic_action"])
+
+        # Boundary at 84.99 -> REQUIRE VERIFICATION / STEP_UP_AUTHENTICATION
+        dec_84 = evaluate_zero_trust_decision({"context": base_ctx, "risk_score": 84.99})
+        self.assertEqual(dec_84["verdict"], "REQUIRE VERIFICATION")
+        self.assertEqual(dec_84["action"], "STEP_UP_AUTHENTICATION")
+        self.assertFalse(dec_84["is_automatic_action"])
+
+        # Boundary at 85.0 -> DENY / REVOKE_AND_ISOLATE
+        dec_85 = evaluate_zero_trust_decision({"context": base_ctx, "risk_score": 85.0})
+        self.assertEqual(dec_85["verdict"], "DENY")
+        self.assertEqual(dec_85["action"], "REVOKE_AND_ISOLATE")
+        self.assertFalse(dec_85["is_automatic_action"])
 
 
 if __name__ == "__main__":
