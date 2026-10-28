@@ -1,0 +1,124 @@
+{
+  "dataset": "IDS2025 Realistic Contiguous Benchmark",
+  "source": "IDS2025.xlsx",
+  "split_protocol": "Contiguous Sequential 80/20 Block Split (Out-of-burst)",
+  "training_rows": 73400,
+  "test_rows": 18344,
+  "class_names": [
+    "Botnet ARES",
+    "Brute Force",
+    "Dos/DDos",
+    "Infiltration",
+    "Normal",
+    "PortScan",
+    "Web Attack"
+  ],
+  "configurations": {
+    "all_features": {
+      "feature_count": 79,
+      "accuracy": 0.9958,
+      "macro_f1": 0.9682,
+      "weighted_f1": 0.9958,
+      "benign_fpr": 0.013,
+      "attack_fnr": 0.0006,
+      "confusion_matrix": {
+        "tn": 5169,
+        "fp": 68,
+        "fn": 8,
+        "tp": 13099
+      },
+      "exact_vector_overlaps": 1,
+      "shortcut_audit": "Ephemeral ports included; provides baseline accuracy."
+    },
+    "no_ports": {
+      "feature_count": 77,
+      "accuracy": 0.9866,
+      "macro_f1": 0.9563,
+      "weighted_f1": 0.9866,
+      "benign_fpr": 0.0367,
+      "attack_fnr": 0.004,
+      "exact_vector_overlaps": 824,
+      "shortcut_audit": "Ports excluded; robust verification against shortcut learning."
+    }
+  },
+  "per_class": [
+    {
+      "Class": "Botnet ARES",
+      "Precision": 0.9894,
+      "Recall": 1.0,
+      "F1": 0.9947,
+      "Support": 375
+    },
+    {
+      "Class": "Brute Force",
+      "Precision": 1.0,
+      "Recall": 1.0,
+      "F1": 1.0,
+      "Support": 2040
+    },
+    {
+      "Class": "Dos/DDos",
+      "Precision": 0.9891,
+      "Recall": 0.9994,
+      "F1": 0.9943,
+      "Support": 5191
+    },
+    {
+      "Class": "Infiltration",
+      "Precision": 1.0,
+      "Recall": 0.6667,
+      "F1": 0.8,
+      "Support": 6
+    },
+    {
+      "Class": "Normal",
+      "Precision": 0.9985,
+      "Recall": 0.987,
+      "F1": 0.9927,
+      "Support": 5237
+    },
+    {
+      "Class": "PortScan",
+      "Precision": 1.0,
+      "Recall": 0.9996,
+      "F1": 0.9998,
+      "Support": 5082
+    },
+    {
+      "Class": "Web Attack",
+      "Precision": 0.9976,
+      "Recall": 0.9879,
+      "F1": 0.9927,
+      "Support": 413
+    }
+  ],
+  "anomaly_detection": {
+    "protocol": "Trained solely on benign Normal traffic (earlier 80%), threshold calibrated on normal validation (later 20%)",
+    "isolation_forest": {
+      "threshold": 0.6447,
+      "precision": 0.5833,
+      "recall": 0.0059,
+      "f1": 0.0116,
+      "fpr": 0.0105,
+      "roc_auc": 0.6718,
+      "pr_auc": 0.8093,
+      "tp": 77,
+      "fp": 55,
+      "tn": 5182,
+      "fn": 13030
+    },
+    "autoencoder": {
+      "threshold": 0.638311,
+      "precision": 0.9558,
+      "recall": 0.1155,
+      "f1": 0.2061,
+      "fpr": 0.0134,
+      "roc_auc": 0.7687,
+      "pr_auc": 0.8668,
+      "tp": 1514,
+      "fp": 70,
+      "tn": 5167,
+      "fn": 11593
+    }
+  }
+}

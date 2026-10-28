@@ -1,0 +1,4 @@
+Model Name,Paradigm,Precision,Attack Recall,F1-Score,Benign FPR,ROC-AUC,PR-AUC,Latency (ms/sample),Model Size (KB),Zero-Day Capable
+Random Forest (79 Features),Known-Attack Classification (Supervised),0.9948355737829422,0.9993896391241321,0.9971074065616199,0.012984533129654382,0.9994,0.9998,0.013128886827073968,27722.9853515625,No (Requires labeled attack training)
+IT Autoencoder (79 -> 32 -> 16 -> 32 -> 79),Unsupervised Novelty Detection (Benign Fit),0.9558080808080808,0.11551079575799192,0.2061125859369682,0.013366431162879512,0.7686606263142314,0.866836015159695,0.0007111208102752353,24.322265625,Yes (Anomaly on non-linear manifold shifts)
+Isolation Forest (100 Trees Baseline),Unsupervised Outlier Detection (Benign Fit),0.5833333333333334,0.005874723430228122,0.011632298511972203,0.010502195913691045,0.6718075686700783,0.8093407990625403,0.005612936120369011,722.5400390625,Yes (Axis-aligned marginal outliers only)

@@ -63,7 +63,6 @@ def main() -> None:
                 "Alert management",
                 "Risk assessment",
                 "Model and data health",
-                "Investigation workflow",
                 "Alert prioritization",
                 "Administration",
             ],
@@ -91,8 +90,6 @@ def main() -> None:
         render_risk(service)
     elif page == "Model and data health":
         render_health(service)
-    elif page == "Investigation workflow":
-        render_investigation(service)
     elif page == "Alert prioritization":
         render_alert_prioritization(service)
     else:

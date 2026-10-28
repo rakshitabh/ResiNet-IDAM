@@ -23,11 +23,11 @@ class RiskInput:
 
 
 WEIGHTS = {
-    "anomaly_severity": 0.40,
-    "behavior_deviation": 0.20,
-    "identity_untrust": 0.20,
+    "behavior_deviation": 0.30,
+    "anomaly_severity": 0.25,
+    "asset_criticality": 0.20,
+    "identity_untrust": 0.15,
     "device_untrust": 0.10,
-    "asset_criticality": 0.10,
 }
 
 
@@ -58,7 +58,7 @@ def _severity(score: float) -> tuple[str, str]:
         return "LOW", "RECORD_AND_MONITOR"
     if score < 60:
         return "MEDIUM", "ALERT_FOR_REVIEW"
-    if score < 80:
+    if score < 85:
         return "HIGH", "PRIORITIZE_INVESTIGATION"
     return "CRITICAL", "RECOMMEND_CONTAINMENT"
 
@@ -142,11 +142,11 @@ def evaluate_zero_trust_decision(event: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
-    if risk_score >= 50 or identity_trust < 0.60 or device_trust < 0.60:
+    if risk_score >= 60 or identity_trust < 0.60 or device_trust < 0.60:
         rule_traces.append(
             {
                 "Rule": "R3: Elevated access risk",
-                "Condition": "risk_score >= 50 or identity_trust < 0.60 or device_trust < 0.60",
+                "Condition": "risk_score >= 60 or identity_trust < 0.60 or device_trust < 0.60",
                 "Evaluated": (
                     f"risk={risk_score:.1f}, "
                     f"identity={identity_trust:.2f}, "
@@ -162,20 +162,23 @@ def evaluate_zero_trust_decision(event: dict[str, Any]) -> dict[str, Any]:
         and asset_criticality >= 0.60
     ) or (
         identity_trust < 0.40 and device_trust < 0.40 and risk_score >= 60
-    ) or risk_score >= 90:
+    ) or risk_score >= 85:
         verdict = "DENY"
+        action = "REVOKE_AND_ISOLATE"
         reason = (
             "Critical attack posture detected. The event combines abnormal behavior, "
             "high asset criticality, and weakened identity/device trust. Access must be blocked."
         )
-    elif risk_score >= 50 or identity_trust < 0.60 or device_trust < 0.60:
+    elif risk_score >= 60 or identity_trust < 0.60 or device_trust < 0.60:
         verdict = "REQUIRE VERIFICATION"
+        action = "STEP_UP_AUTHENTICATION"
         reason = (
             "Potential security risk detected. Re-authentication, identity validation, "
             "and additional behavioral review are required before access continues."
         )
     else:
         verdict = "ALLOW"
+        action = "RECORD_AND_MONITOR"
         reason = (
             "Contextual risk is within acceptable bounds. Identity, device posture, "
             "and behavior indicators are consistent with trusted operations."
@@ -183,6 +186,8 @@ def evaluate_zero_trust_decision(event: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "verdict": verdict,
+        "action": action,
+        "recommended_action": action,
         "reason": reason,
         "risk_score": risk_score,
         "rule_traces": rule_traces,
