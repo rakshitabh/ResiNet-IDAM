@@ -1,0 +1,7 @@
+Held-Out Attack Family,Test Samples,Supervised (Forced Normal),Baseline Autoencoder Recall,Residual Autoencoder Recall,Isolation Forest Recall,Baseline AE ROC-AUC,Residual AE ROC-AUC
+Botnet ARES,375,375/375 (100.00%),9/375 (2.40%),9/375 (2.40%),0/375 (0.00%),0.6863,0.6086
+Brute Force,2040,1622/2040 (79.51%),0/2040 (0.00%),1/2040 (0.05%),0/2040 (0.00%),0.5652,0.6141
+Dos/DDos,5191,5129/5191 (98.81%),1491/5191 (28.72%),2594/5191 (49.97%),75/5191 (1.44%),0.8579,0.8651
+Infiltration,6,6/6 (100.00%),2/6 (33.33%),2/6 (33.33%),2/6 (33.33%),0.869,0.8478
+PortScan,5082,5072/5082 (99.80%),10/5082 (0.20%),0/5082 (0.00%),0/5082 (0.00%),0.7872,0.7191
+Web Attack,413,412/413 (99.76%),2/413 (0.48%),0/413 (0.00%),0/413 (0.00%),0.4967,0.5135

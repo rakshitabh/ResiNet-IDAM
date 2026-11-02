@@ -1,0 +1,5 @@
+Scenario,Samples,Expected Behavior,Observed Drift Events,Observed Warnings,Final Monitor State,Pass
+1. Stable Normal Stream,15000,No persistent drift alarm,0,0,NORMAL,True
+2. Legitimate Workload / Sensor Shift,15000,Drift confirmed; REVIEW_REQUIRED requested; no auto-actuation,1,1,REVIEW_REQUIRED,True
+3. Acute Attack Burst,10000,Detection alert remains active; drift monitor adds context,3,1,REVIEW_REQUIRED,True
+4. Short Noisy Fluctuation,8000,Absorb brief noise; avoid repeated unnecessary retraining,0,0,NORMAL,True

@@ -1,0 +1,10 @@
+Experiment,Domain,Configuration,Description,Accuracy,Precision,Recall,F1-Score,FPR,ROC-AUC,F1 Rel Gain (%),FPR Reduction (%)
+E0,OT,Current Baseline,Fixed threshold OT Autoencoder (tau=0.821954),92.27%,34.92%,46.39%,39.84%,5.05%,0.7639,+0.00%,+0.00%
+E1,OT,E0 + Adaptive Threshold,Rolling window T(t) = mu + 3.0*sigma,91.92%,32.54%,43.17%,37.11%,5.23%,0.7639,-6.85%,-3.56%
+E2,OT,E0 + Drift Monitor,Block Page-Hinkley drift state-machine governance,92.27%,34.92%,46.39%,39.84%,5.05%,0.7639,+0.00%,+0.00%
+E3,OT,E0 + Model Fusion,"Calibrated weighted ensemble (AE=0.45, IF=0.55)",94.08%,46.31%,44.98%,45.64%,3.05%,0.7833,+14.56%,+39.60%
+E4,OT,E0 + Explainability,Element-wise reconstruction residuals attribution,92.27%,34.92%,46.39%,39.84%,5.05%,0.7639,+0.00%,+0.00%
+E5,OT,ResiNet-IDAM v2.0 Combined,Adaptive threshold + Drift + Model Fusion + XAI,90.52%,28.92%,49.18%,36.42%,7.06%,0.7833,-8.58%,-39.80%
+E0,IT,Current Baseline,Supervised Random Forest (79 features),99.59%,99.48%,99.94%,99.71%,1.30%,0.9996,+0.00%,+0.00%
+E3,IT,E0 + Model Fusion,"Calibrated Ensemble (RF=0.60, ResAE=0.20, IF=0.20)",99.46%,99.51%,99.74%,99.62%,1.24%,0.9986,-0.09%,+4.62%
+E5,IT,ResiNet-IDAM v2.0 Combined,Full IT Fusion + Drift + ZT Risk + XAI,99.46%,99.51%,99.74%,99.62%,1.24%,0.9986,-0.09%,+4.62%

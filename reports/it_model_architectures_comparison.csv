@@ -1,0 +1,5 @@
+Architecture,Threshold,Precision,Recall,F1-Score,FPR,FNR,ROC-AUC,PR-AUC,Burst Detection Rate,Median Detection Delay (samples)
+Baseline Autoencoder (79->32->16->32->79),0.638311,0.9558,0.1155,0.2061,0.0134,0.8845,0.7687,0.8668,1.0,2.0
+Residual Autoencoder (with Skip Connections),0.463581,0.9728,0.1988,0.3302,0.0139,0.8012,0.751,0.8617,1.0,0.0
+Attention Autoencoder (Feature Gating Ablation),1.216559,0.8552,0.0288,0.0558,0.0122,0.9712,0.7108,0.8322,1.0,41.0
+Isolation Forest Baseline,0.644722,0.5833,0.0059,0.0116,0.0105,0.9941,0.6718,0.8093,1.0,41.0

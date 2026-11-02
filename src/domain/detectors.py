@@ -8,6 +8,11 @@ from typing import Protocol
 from src.domain.events import DetectionResult, Source
 
 
+class ArtifactError(RuntimeError):
+    """Raised when a model or preprocessing artifact cannot be loaded."""
+    pass
+
+
 class Detector(Protocol):
     source: Source
     name: str

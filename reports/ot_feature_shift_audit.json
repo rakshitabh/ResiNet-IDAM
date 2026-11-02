@@ -1,0 +1,168 @@
+{
+  "audit_title": "HAI OT Seven Constant Test Features Audit",
+  "total_features_audited": 7,
+  "conclusion": "All 7 features vary during normal training but become constant in test due to static operational mode (pure automatic run, no manual operator intervention, fixed pump setpoint). They are structurally valid and must be retained in the 66-feature contract to prevent model schema mismatch.",
+  "features": {
+    "P1_PP04SP": {
+      "subsystem": "P1 (Boiler / Water Treatment)",
+      "description": "Pump PP04 speed/pressure setpoint signal",
+      "signal_type": "Continuous/Discrete Setpoint",
+      "operational_cause": "Training exercised 17 distinct operational setpoint steps; the test scenario ran at a single fixed setpoint of 27.49.",
+      "recommended_action": "Retain in feature contract; do not artificially remove. Monitor as domain shift candidate in Phase 4.",
+      "train_scaled_stats": {
+        "mean": 4.123797898708217e-06,
+        "std": 1.000001823345686,
+        "min": -1.7893298,
+        "max": 0.5589005,
+        "unique_count": 17
+      },
+      "test_scaled_stats": {
+        "mean": -3.9604732999999994,
+        "std": 4.440933218443019e-16,
+        "min": -3.9604733,
+        "max": -3.9604733,
+        "unique_count": 1
+      },
+      "test_unscaled_value": 27.48882,
+      "standard_deviation_shift": 3.960477423797898
+    },
+    "P2_ATSW_Lamp": {
+      "subsystem": "P2 (Turbine / Generator)",
+      "description": "Auto-Trip Switch lamp status indicator",
+      "signal_type": "Binary Actuator Lamp",
+      "operational_cause": "Operational mode switch: plant operated exclusively in auto-run mode during test, so the auto-trip lamp remained illuminated continuously (1.0).",
+      "recommended_action": "Retain in feature contract.",
+      "train_scaled_stats": {
+        "mean": -2.846068364927997e-08,
+        "std": 1.0000017767670866,
+        "min": -1.9652617,
+        "max": 0.50883806,
+        "unique_count": 2
+      },
+      "test_scaled_stats": {
+        "mean": 0.5088380600000002,
+        "std": 2.2204666092215097e-16,
+        "min": 0.50883806,
+        "max": 0.50883806,
+        "unique_count": 1
+      },
+      "test_unscaled_value": 1.0,
+      "standard_deviation_shift": 0.5088380884606839
+    },
+    "P2_AutoGO": {
+      "subsystem": "P2 (Turbine / Generator)",
+      "description": "Automatic start/run command signal",
+      "signal_type": "Binary Control Signal",
+      "operational_cause": "Plant ran continuously in automated control mode (value 1.0) throughout the test interval.",
+      "recommended_action": "Retain in feature contract.",
+      "train_scaled_stats": {
+        "mean": 3.078803432608014e-08,
+        "std": 1.0000017662852834,
+        "min": -1.9652402,
+        "max": 0.50884366,
+        "unique_count": 2
+      },
+      "test_scaled_stats": {
+        "mean": 0.5088436600000001,
+        "std": 1.1102333046107549e-16,
+        "min": 0.50884366,
+        "max": 0.50884366,
+        "unique_count": 1
+      },
+      "test_unscaled_value": 1.0,
+      "standard_deviation_shift": 0.5088436292119658
+    },
+    "P2_MASW": {
+      "subsystem": "P2 (Turbine / Generator)",
+      "description": "Manual switch state",
+      "signal_type": "Binary Switch",
+      "operational_cause": "No manual operator takeover occurred during the test stream (held at 0.0).",
+      "recommended_action": "Retain in feature contract.",
+      "train_scaled_stats": {
+        "mean": -3.078803432608014e-08,
+        "std": 1.0000017662852834,
+        "min": -0.50884366,
+        "max": 1.9652402,
+        "unique_count": 2
+      },
+      "test_scaled_stats": {
+        "mean": -0.5088436600000001,
+        "std": 1.1102333046107549e-16,
+        "min": -0.50884366,
+        "max": -0.50884366,
+        "unique_count": 1
+      },
+      "test_unscaled_value": 0.0,
+      "standard_deviation_shift": 0.5088436292119658
+    },
+    "P2_MASW_Lamp": {
+      "subsystem": "P2 (Turbine / Generator)",
+      "description": "Manual switch lamp indicator",
+      "signal_type": "Binary Indicator",
+      "operational_cause": "Inactive lamp corresponding to MASW=0 (held at 0.0).",
+      "recommended_action": "Retain in feature contract.",
+      "train_scaled_stats": {
+        "mean": -3.078803432608014e-08,
+        "std": 1.0000017662852834,
+        "min": -0.50884366,
+        "max": 1.9652402,
+        "unique_count": 2
+      },
+      "test_scaled_stats": {
+        "mean": -0.5088436600000001,
+        "std": 1.1102333046107549e-16,
+        "min": -0.50884366,
+        "max": -0.50884366,
+        "unique_count": 1
+      },
+      "test_unscaled_value": 0.0,
+      "standard_deviation_shift": 0.5088436292119658
+    },
+    "P2_ManualGO": {
+      "subsystem": "P2 (Turbine / Generator)",
+      "description": "Manual start command signal",
+      "signal_type": "Binary Control Signal",
+      "operational_cause": "No manual start events in test run (held at 0.0).",
+      "recommended_action": "Retain in feature contract.",
+      "train_scaled_stats": {
+        "mean": -3.312678165814907e-09,
+        "std": 1.0000017929346119,
+        "min": -0.5088381,
+        "max": 1.9652617,
+        "unique_count": 2
+      },
+      "test_scaled_stats": {
+        "mean": -0.5088381000000002,
+        "std": 2.2204666092215097e-16,
+        "min": -0.5088381,
+        "max": -0.5088381,
+        "unique_count": 1
+      },
+      "test_unscaled_value": 0.0,
+      "standard_deviation_shift": 0.508838096687322
+    },
+    "P2_ManualSD": {
+      "subsystem": "P2 (Turbine / Generator)",
+      "description": "Manual shutdown setpoint / threshold",
+      "signal_type": "Setpoint / Indicator",
+      "operational_cause": "Held at constant standby position (unscaled 12.92742) throughout the test run.",
+      "recommended_action": "Retain in feature contract.",
+      "train_scaled_stats": {
+        "mean": 6.01954773309965e-08,
+        "std": 1.0000017916167718,
+        "min": -2.4011638,
+        "max": 0.5207056,
+        "unique_count": 7
+      },
+      "test_scaled_stats": {
+        "mean": 0.5207056000000001,
+        "std": 1.1102333046107549e-16,
+        "min": 0.5207056,
+        "max": 0.5207056,
+        "unique_count": 1
+      },
+      "test_unscaled_value": 12.92742,
+      "standard_deviation_shift": 0.5207055398045227
+    }
+  }
+}

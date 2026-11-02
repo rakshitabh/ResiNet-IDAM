@@ -1,13 +1,15 @@
-"""HAI OT Autoencoder detector."""
+"""HAI 21.03 Autoencoder Detector for Industrial OT Physical Telemetry."""
 
 from __future__ import annotations
 
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any
-
 import numpy as np
+
 try:
+    import tensorflow as tf
     from tensorflow import keras
     HAS_TENSORFLOW = True
 except (ImportError, Exception):
@@ -19,24 +21,21 @@ from src.infrastructure.model_loader import ArtifactError, load_json
 
 
 class NumpyAutoencoder:
-    """Portable forward-pass engine for the trained 4-layer autoencoder."""
+    """Portable NumPy forward-pass inference engine for the 66-feature OT Autoencoder."""
 
-    def __init__(self, weights_path: Path) -> None:
+    def __init__(self, weights_path: str | Path) -> None:
         data = np.load(weights_path)
-        self.w0 = data["w0"]
-        self.b0 = data["b0"]
-        self.w1 = data["w1"]
-        self.b1 = data["b1"]
-        self.w2 = data["w2"]
-        self.b2 = data["b2"]
-        self.w3 = data["w3"]
-        self.b3 = data["b3"]
+        self.w0, self.b0 = data["w0"], data["b0"]
+        self.w1, self.b1 = data["w1"], data["b1"]
+        self.w2, self.b2 = data["w2"], data["b2"]
+        self.w3, self.b3 = data["w3"], data["b3"]
 
-    def predict(self, vector: np.ndarray, verbose: int = 0) -> np.ndarray:
-        x = np.maximum(0, vector @ self.w0 + self.b0)
-        x = np.maximum(0, x @ self.w1 + self.b1)
-        x = np.maximum(0, x @ self.w2 + self.b2)
-        return x @ self.w3 + self.b3
+    def predict(self, X: np.ndarray, verbose: int = 0) -> np.ndarray:
+        h0 = np.maximum(0, X @ self.w0 + self.b0)
+        h1 = np.maximum(0, h0 @ self.w1 + self.b1)
+        h2 = np.maximum(0, h1 @ self.w2 + self.b2)
+        recon = h2 @ self.w3 + self.b3
+        return recon
 
 
 class HaiAutoencoderDetector:
@@ -86,10 +85,23 @@ class HaiAutoencoderDetector:
 
         vector = np.asarray([values[name] for name in schema], dtype=np.float32).reshape(1, -1)
         reconstructed = self._get_model().predict(vector, verbose=0)
-        reconstruction_error = float(np.mean(np.square(vector - reconstructed)))
+        residuals = np.square(vector - reconstructed).flatten()
+        reconstruction_error = float(np.mean(residuals))
         threshold = float(self._metadata["threshold"])
         prediction = "ATTACK" if reconstruction_error > threshold else "NORMAL"
         confidence = min(reconstruction_error / threshold, 1.0) if threshold else 0.0
+
+        top_indices = np.argsort(residuals)[::-1][:5]
+        top_features = [
+            {
+                "feature_name": schema[idx],
+                "observed_value": round(float(vector[0, idx]), 4),
+                "expected_value": round(float(reconstructed[0, idx]), 4),
+                "residual_error": round(float(residuals[idx]), 6),
+                "relative_deviation": round(float(abs(vector[0, idx] - reconstructed[0, idx]) / (abs(reconstructed[0, idx]) + 1e-5)), 4),
+            }
+            for idx in top_indices
+        ]
 
         return {
             "prediction": prediction,
@@ -98,6 +110,7 @@ class HaiAutoencoderDetector:
             "anomaly_decision": reconstruction_error > threshold,
             "confidence": confidence,
             "reconstruction_error": reconstruction_error,
+            "top_contributing_features": top_features,
         }
 
     def detect(
@@ -125,5 +138,6 @@ class HaiAutoencoderDetector:
             metadata={
                 "model_version": self._metadata.get("model_version"),
                 "reconstruction_error": summary["reconstruction_error"],
+                "top_contributing_features": summary["top_contributing_features"],
             },
         )

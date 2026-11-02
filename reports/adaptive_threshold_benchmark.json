@@ -1,0 +1,126 @@
+{
+  "evaluation_title": "ResiNet-IDAM v2.0 Adaptive Threshold Benchmark",
+  "timestamp": "2026-11-01T18:37:01.031789",
+  "scenarios": {
+    "OT_Stationary": {
+      "fixed": {
+        "mode": "Fixed Threshold",
+        "threshold": 0.821954,
+        "precision": 0.3492,
+        "recall": 0.4639,
+        "f1": 0.3984,
+        "fpr": 0.0505,
+        "tp": 1383,
+        "fp": 2578,
+        "fn": 1598,
+        "tn": 48441,
+        "threshold_std": 0.0
+      },
+      "adaptive": {
+        "mode": "Adaptive Threshold (T = mu + k*sigma)",
+        "initial_threshold": 0.821954,
+        "final_threshold": 0.722056,
+        "mean_threshold": 0.799529,
+        "threshold_std": 0.130684,
+        "precision": 0.3254,
+        "recall": 0.4317,
+        "f1": 0.3711,
+        "fpr": 0.0523,
+        "tp": 1287,
+        "fp": 2668,
+        "fn": 1694,
+        "tn": 48351
+      }
+    },
+    "IT_Stationary": {
+      "fixed": {
+        "mode": "Fixed Threshold",
+        "threshold": 0.638311,
+        "precision": 0.9558,
+        "recall": 0.1155,
+        "f1": 0.2061,
+        "fpr": 0.0134,
+        "tp": 1514,
+        "fp": 70,
+        "fn": 11593,
+        "tn": 5167,
+        "threshold_std": 0.0
+      },
+      "adaptive": {
+        "mode": "Adaptive Threshold (T = mu + k*sigma)",
+        "initial_threshold": 0.638311,
+        "final_threshold": 0.319155,
+        "mean_threshold": 0.320937,
+        "threshold_std": 0.023548,
+        "precision": 0.9479,
+        "recall": 0.2251,
+        "f1": 0.3638,
+        "fpr": 0.0309,
+        "tp": 2950,
+        "fp": 162,
+        "fn": 10157,
+        "tn": 5075
+      }
+    },
+    "OT_Benign_Load_Shift": {
+      "fixed": {
+        "mode": "Fixed Threshold",
+        "threshold": 0.821954,
+        "precision": 0.1758,
+        "recall": 0.4639,
+        "f1": 0.2549,
+        "fpr": 0.1271,
+        "tp": 1383,
+        "fp": 6486,
+        "fn": 1598,
+        "tn": 44533,
+        "threshold_std": 0.0
+      },
+      "adaptive": {
+        "mode": "Adaptive Threshold (T = mu + k*sigma)",
+        "initial_threshold": 0.821954,
+        "final_threshold": 0.722056,
+        "mean_threshold": 0.892293,
+        "threshold_std": 0.240688,
+        "precision": 0.2599,
+        "recall": 0.314,
+        "f1": 0.2844,
+        "fpr": 0.0523,
+        "tp": 936,
+        "fp": 2666,
+        "fn": 2045,
+        "tn": 48353
+      }
+    },
+    "OT_Poisoning_Attack": {
+      "fixed": {
+        "mode": "Fixed Threshold",
+        "threshold": 0.821954,
+        "precision": 0.4633,
+        "recall": 0.7464,
+        "f1": 0.5717,
+        "fpr": 0.0505,
+        "tp": 2225,
+        "fp": 2578,
+        "fn": 756,
+        "tn": 48441,
+        "threshold_std": 0.0
+      },
+      "adaptive": {
+        "mode": "Adaptive Threshold (T = mu + k*sigma)",
+        "initial_threshold": 0.821954,
+        "final_threshold": 0.722056,
+        "mean_threshold": 0.79567,
+        "threshold_std": 0.124198,
+        "precision": 0.4471,
+        "recall": 0.7273,
+        "f1": 0.5538,
+        "fpr": 0.0525,
+        "tp": 2168,
+        "fp": 2681,
+        "fn": 813,
+        "tn": 48338
+      }
+    }
+  }
+}

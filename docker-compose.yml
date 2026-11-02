@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  resinet-console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resinet-idam-console
+    ports:
+      - "8501:8501"
+    environment:
+      - RESINET_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./reports:/app/reports
+    restart: unless-stopped
+    command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+
+  resinet-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resinet-idam-api
+    ports:
+      - "8000:8000"
+    environment:
+      - RESINET_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    restart: unless-stopped
+    command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
