@@ -47,3 +47,8 @@ class SecurityEvent:
     context: dict[str, Any]
     risk_components: dict[str, float]
     metadata: dict[str, Any] = field(default_factory=dict)
+    top_contributing_features: list[dict[str, Any]] = field(default_factory=list)
+    fusion_contributions: dict[str, float] = field(default_factory=dict)
+    drift_status: str = "NORMAL"
+    threshold_mode: str = "ADAPTIVE"
+    explanation_summary: str = ""

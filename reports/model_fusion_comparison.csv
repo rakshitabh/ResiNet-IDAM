@@ -1,0 +1,10 @@
+Domain,Model / Architecture,Configuration,Precision,Recall,F1-Score,FPR,ROC-AUC,Latency (ms)
+IT,Random Forest,Supervised (79 features),99.48%,99.94%,99.71%,1.30%,0.9996,0.019
+IT,Residual Autoencoder,Unsupervised Skip AE,97.76%,11.64%,20.81%,0.67%,0.7510,0.005
+IT,Isolation Forest,Density Outlier,83.56%,26.57%,40.31%,13.08%,0.6718,0.009
+IT,Calibrated IT Fusion (Static),"RF=0.60, AE=0.20, IF=0.20",99.51%,99.74%,99.62%,1.24%,0.9986,0.072
+IT,Calibrated IT Fusion (Adaptive),Zero-Day Safeguard Boost,99.17%,99.74%,99.45%,2.10%,0.9969,0.079
+OT,Autoencoder,Reconstruction (66 features),34.92%,46.39%,39.84%,5.05%,0.7639,0.002
+OT,Isolation Forest,Density Outlier,27.61%,32.64%,29.92%,5.00%,0.7573,0.007
+OT,Calibrated OT Fusion (Static),"AE=0.45, IF=0.55",46.31%,44.98%,45.64%,3.05%,0.7833,0.067
+OT,Calibrated OT Fusion (Adaptive),Feedback-calibrated weights,46.32%,44.95%,45.62%,3.04%,0.7836,0.061

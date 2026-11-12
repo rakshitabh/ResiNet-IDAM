@@ -1,0 +1,11 @@
+Domain,Model / Component,Batch Size,Samples Evaluated,Median Latency (ms),P95 Latency (ms),Throughput (samples/s),Peak RAM (MB),Model Size (MB)
+IT,Random Forest (Supervised),1,1000,123.6132,175.8518,10.1,378.89,27.073
+IT,Residual Autoencoder (NumPy),1,1000,0.0176,0.0186,55648.9,379.0,0.057
+IT,Isolation Forest,1,1000,5.5897,9.4447,166.3,379.08,0.706
+IT,Calibrated IT Fusion Pipeline,1,1000,41.5065,60.5393,23.9,379.1,27.836
+OT,OT Autoencoder (NumPy),1,1000,0.0109,0.02,78693.7,427.86,0.022
+OT,OT Isolation Forest,1,1000,5.4982,8.313,169.2,428.16,1.494
+OT,Calibrated OT Fusion Pipeline,1,1000,5.4097,9.9758,164.5,428.16,1.516
+OT,Full End-to-End System (Fusion + Drift + ZT Risk + XAI),1,500,6.4124,10.3798,146.8,428.22,1.516
+IT,Residual Autoencoder (Batch 64),64,2000,0.0009,0.0011,985998.8,428.37,0.057
+OT,OT Autoencoder (Batch 64),64,2000,0.0004,0.0006,2101723.4,428.38,0.022

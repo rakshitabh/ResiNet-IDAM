@@ -1,4 +1,4 @@
-"""SQLite persistence for scored security events."""
+"""SQLite persistence for scored security events and concept drift auditing."""
 
 from __future__ import annotations
 
@@ -29,6 +29,20 @@ CREATE TABLE IF NOT EXISTS events (
     risk_components_json TEXT NOT NULL,
     recommended_action TEXT NOT NULL DEFAULT '',
     metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS drift_events (
+    event_id TEXT PRIMARY KEY,
+    domain TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    detector_type TEXT NOT NULL,
+    sample_index INTEGER NOT NULL,
+    statistic_value REAL NOT NULL,
+    threshold REAL NOT NULL,
+    state TEXT NOT NULL,
+    model_version TEXT NOT NULL,
+    message TEXT NOT NULL,
+    operator_decision TEXT NOT NULL DEFAULT 'PENDING_REVIEW'
 );
 """
 
@@ -160,6 +174,55 @@ class EventStore:
             cursor = connection.execute(
                 "UPDATE events SET review_status = ? WHERE event_id = ?",
                 (review_status, event_id),
+            )
+        return cursor.rowcount == 1
+
+    def record_drift_event(self, event: dict[str, Any]) -> dict[str, Any]:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO drift_events (
+                    event_id, domain, timestamp, detector_type, sample_index,
+                    statistic_value, threshold, state, model_version, message,
+                    operator_decision
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event["event_id"],
+                    event["domain"],
+                    event["timestamp"],
+                    event["detector_type"],
+                    int(event["sample_index"]),
+                    float(event["statistic_value"]),
+                    float(event["threshold"]),
+                    event["state"],
+                    event["model_version"],
+                    event["message"],
+                    event.get("operator_decision", "PENDING_REVIEW"),
+                ),
+            )
+        return event
+
+    def list_drift_events(
+        self, domain: str | None = None, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        query = "SELECT * FROM drift_events"
+        params: list[Any] = []
+        if domain:
+            query += " WHERE domain = ?"
+            params.append(domain.upper())
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+
+        with self._connect() as connection:
+            rows = connection.execute(query, params).fetchall()
+        return [dict(row) for row in rows]
+
+    def update_drift_decision(self, event_id: str, decision: str) -> bool:
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE drift_events SET operator_decision = ? WHERE event_id = ?",
+                (decision, event_id),
             )
         return cursor.rowcount == 1
 

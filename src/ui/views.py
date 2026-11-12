@@ -688,6 +688,30 @@ def render_investigation(service: DetectionService) -> None:
         else:
             st.info("No risk component data is attached to this event.")
 
+        st.subheader("Top Contributing Telemetry Features (Explainable AI)")
+        meta = event.get("metadata", {})
+        top_features = meta.get("top_contributing_features") or event.get("top_contributing_features", [])
+        if top_features:
+            df_feat = pd.DataFrame(top_features)
+            fig_feat = px.bar(
+                df_feat.sort_values(by="residual_error", ascending=True),
+                x="residual_error",
+                y="feature_name",
+                orientation="h",
+                title="Top Diverging Features (Element-wise Reconstruction Residuals)",
+                labels={"residual_error": "Squared Residual Error", "feature_name": "Sensor / Flow Feature"},
+                color="residual_error",
+                color_continuous_scale="Reds",
+            )
+            st.plotly_chart(fig_feat, use_container_width=True)
+            st.dataframe(df_feat, use_container_width=True, hide_index=True)
+        else:
+            st.info("Element-wise reconstruction attribution is computed for autoencoder-driven alerts.")
+
+        narrative = meta.get("explanation_summary") or event.get("explanation_summary")
+        if narrative:
+            st.info(f"**Alert Narrative:** {narrative}")
+
     with evidence_tab:
         context = event.get("context", {})
         context_df = pd.DataFrame(
@@ -733,8 +757,36 @@ def render_investigation(service: DetectionService) -> None:
             }
         )
 
+        fusion_contribs = meta.get("fusion_contributions") or event.get("fusion_contributions", {})
+        if fusion_contribs:
+            st.subheader("Multi-Model Fusion Decision Attribution")
+            df_fus = pd.DataFrame(list(fusion_contribs.items()), columns=["Model", "Contribution (%)"])
+            fig_fus = px.pie(df_fus, values="Contribution (%)", names="Model", title="Model Score Contribution Breakdown")
+            st.plotly_chart(fig_fus, use_container_width=True)
+
+        st.caption("Governance and Operational Status")
+        st.write(f"**Drift Monitoring State:** `{meta.get('drift_state') or event.get('drift_status', 'NORMAL')}`")
+        st.write(f"**Threshold Mode:** `{meta.get('threshold_mode') or event.get('threshold_mode', 'ADAPTIVE')}`")
+
     with analyst_tab:
         st.caption("Analyst triage")
+        st.subheader("SecOps Response Actions")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            if st.button("ACKNOWLEDGE ALERT", key=f"ack_{event_id}", use_container_width=True):
+                service.store.update_review(event_id, "RESOLVED", "Acknowledged by operator")
+                st.success("Alert acknowledged and marked RESOLVED.")
+                st.rerun()
+        with c2:
+            if st.button("DISMISS AS BENIGN", key=f"dis_{event_id}", use_container_width=True):
+                service.store.update_review(event_id, "RESOLVED", "Dismissed as false positive")
+                st.success("Alert dismissed as false positive.")
+                st.rerun()
+        with c3:
+            if st.button("ESCALATE INCIDENT", key=f"esc_{event_id}", use_container_width=True):
+                service.store.update_review(event_id, "IN_REVIEW", "Escalated for immediate incident response")
+                st.warning("Incident escalated for containment.")
+                st.rerun()
         triage_verdict = st.selectbox(
             "Investigation verdict",
             ["Confirmed attack", "Benign false positive", "Requires validation", "Investigate later"],
@@ -876,6 +928,38 @@ def render_health(service: DetectionService) -> None:
         use_container_width=True,
         hide_index=True,
     )
+
+    st.subheader("Concept Drift and Adaptive Threshold Governance")
+    drift_status = service.drift_status()
+    d_cols = st.columns(2)
+    with d_cols[0]:
+        ot_status = drift_status.get("OT", {})
+        st.metric("OT Telemetry Drift State", ot_status.get("state", "NORMAL"))
+        st.caption(f"Detector: {ot_status.get('detector_type', 'BlockPageHinkley')} | Samples: {ot_status.get('samples_processed', 0):,}")
+        if ot_status.get("state") == "REVIEW_REQUIRED":
+            if st.button("Reset OT Drift State (Approve Baseline)", key="rst_ot_drift"):
+                service.acknowledge_drift("OT", "BASELINE_APPROVED")
+                st.success("OT drift state reset to NORMAL.")
+                st.rerun()
+    with d_cols[1]:
+        it_status = drift_status.get("IT", {})
+        st.metric("IT Network Drift State", it_status.get("state", "NORMAL"))
+        st.caption(f"Detector: {it_status.get('detector_type', 'BlockPageHinkley')} | Samples: {it_status.get('samples_processed', 0):,}")
+        if it_status.get("state") == "REVIEW_REQUIRED":
+            if st.button("Reset IT Drift State (Approve Baseline)", key="rst_it_drift"):
+                service.acknowledge_drift("IT", "BASELINE_APPROVED")
+                st.success("IT drift state reset to NORMAL.")
+                st.rerun()
+
+    drift_events = service.list_drift_events(limit=10)
+    if drift_events:
+        st.markdown("**Recent Concept Drift Events (Audit Log)**")
+        st.dataframe(pd.DataFrame(drift_events), use_container_width=True, hide_index=True)
+
+    fusion_comp_path = ROOT / "reports" / "model_fusion_comparison.csv"
+    if fusion_comp_path.exists():
+        st.markdown("**Multi-Model Fusion Benchmark (Priority 5 Performance)**")
+        st.dataframe(pd.read_csv(fusion_comp_path), use_container_width=True, hide_index=True)
 
     st.subheader("Domain Telemetry & Model Health")
     health_domain = st.radio(

@@ -1,0 +1,181 @@
+{
+  "schema_version": "2.0.0",
+  "created_at": "2026-11-01T18:00:00Z",
+  "project": "ResiNet-IDAM v2.0",
+  "description": "Reproducible Data Provenance, Integrity Hashes, and Attack Label Manifest",
+  "datasets": {
+    "OT_telemetry": {
+      "benchmark_name": "HAI (Hardware-in-the-Loop Anomaly Detection) 21.03/22.04",
+      "subsystems": [
+        "P1: Boiler / Water Treatment",
+        "P2: Turbine / Generator",
+        "P3: Water Treatment / RO",
+        "P4: Smart Power / Thermal"
+      ],
+      "feature_count": 66,
+      "sampling_rate": "1 sample / second (1 Hz)",
+      "training_partition": {
+        "file": "data/processed/hai-train-scaled.csv",
+        "sha256": "3928e07dbe4b14bc106ccf9caf930fd4da57e3d6ccd56578e6e03ed3930a056e",
+        "rows": 280800,
+        "time_span": {
+          "start": "2022-08-04 18:00:01",
+          "end": "2022-08-08 00:00:00"
+        },
+        "label_type": "Unlabeled normal operational baseline"
+      },
+      "test_partition": {
+        "file_scaled": "data/processed/hai-test-scaled.csv",
+        "file_unscaled": "data/processed/hai-test-labeled.csv",
+        "sha256_scaled": "b03f2bfecfb8e5a2a370a1f23a4d1671f3e570d29181d72c9d51068848cb1966",
+        "sha256_unscaled": "93f8be8f9d2d793eab2f291a4721e1c3d2e2691f6114ebe3171615cc4f99cbe4",
+        "rows": 54000,
+        "time_span": {
+          "start": "2022-08-12 16:00:01",
+          "end": "2022-08-13 07:00:00"
+        },
+        "normal_samples": 51019,
+        "attack_samples": 2981,
+        "attack_percentage": 5.520370370370371,
+        "total_attack_windows": 14,
+        "first_attack_row": 1503,
+        "first_attack_timestamp": "2022-08-12 16:25:04",
+        "attack_windows": [
+          {
+            "start_row_index": 1503,
+            "end_row_index": 1740,
+            "duration_seconds": 238,
+            "start_timestamp": "2022-08-12 16:25:04",
+            "end_timestamp": "2022-08-12 16:29:01"
+          },
+          {
+            "start_row_index": 5700,
+            "end_row_index": 5898,
+            "duration_seconds": 199,
+            "start_timestamp": "2022-08-12 17:35:01",
+            "end_timestamp": "2022-08-12 17:38:19"
+          },
+          {
+            "start_row_index": 9136,
+            "end_row_index": 9292,
+            "duration_seconds": 157,
+            "start_timestamp": "2022-08-12 18:32:17",
+            "end_timestamp": "2022-08-12 18:34:53"
+          },
+          {
+            "start_row_index": 12063,
+            "end_row_index": 12227,
+            "duration_seconds": 165,
+            "start_timestamp": "2022-08-12 19:21:04",
+            "end_timestamp": "2022-08-12 19:23:48"
+          },
+          {
+            "start_row_index": 16980,
+            "end_row_index": 17141,
+            "duration_seconds": 162,
+            "start_timestamp": "2022-08-12 20:43:01",
+            "end_timestamp": "2022-08-12 20:45:42"
+          },
+          {
+            "start_row_index": 20160,
+            "end_row_index": 20357,
+            "duration_seconds": 198,
+            "start_timestamp": "2022-08-12 21:36:01",
+            "end_timestamp": "2022-08-12 21:39:18"
+          },
+          {
+            "start_row_index": 24420,
+            "end_row_index": 25024,
+            "duration_seconds": 605,
+            "start_timestamp": "2022-08-12 22:47:01",
+            "end_timestamp": "2022-08-12 22:57:05"
+          },
+          {
+            "start_row_index": 27314,
+            "end_row_index": 27410,
+            "duration_seconds": 97,
+            "start_timestamp": "2022-08-12 23:35:15",
+            "end_timestamp": "2022-08-12 23:36:51"
+          },
+          {
+            "start_row_index": 30303,
+            "end_row_index": 30433,
+            "duration_seconds": 131,
+            "start_timestamp": "2022-08-13 00:25:04",
+            "end_timestamp": "2022-08-13 00:27:14"
+          },
+          {
+            "start_row_index": 34448,
+            "end_row_index": 34503,
+            "duration_seconds": 56,
+            "start_timestamp": "2022-08-13 01:34:09",
+            "end_timestamp": "2022-08-13 01:35:04"
+          },
+          {
+            "start_row_index": 37263,
+            "end_row_index": 37394,
+            "duration_seconds": 132,
+            "start_timestamp": "2022-08-13 02:21:04",
+            "end_timestamp": "2022-08-13 02:23:15"
+          },
+          {
+            "start_row_index": 41162,
+            "end_row_index": 41240,
+            "duration_seconds": 79,
+            "start_timestamp": "2022-08-13 03:26:03",
+            "end_timestamp": "2022-08-13 03:27:21"
+          },
+          {
+            "start_row_index": 45781,
+            "end_row_index": 45914,
+            "duration_seconds": 134,
+            "start_timestamp": "2022-08-13 04:43:02",
+            "end_timestamp": "2022-08-13 04:45:15"
+          },
+          {
+            "start_row_index": 49207,
+            "end_row_index": 49834,
+            "duration_seconds": 628,
+            "start_timestamp": "2022-08-13 05:40:08",
+            "end_timestamp": "2022-08-13 05:50:35"
+          }
+        ]
+      },
+      "scaler_artifact": {
+        "file": "models/standard_scaler.joblib",
+        "sha256": "082fcd10cd2d9805d2a86f6cec3aab0d18d17fb0fa242b074c2b0506708c817e",
+        "feature_contract_file": "models/feature_columns.json",
+        "feature_contract_sha256": "1a877ad12a9757393515b8a56b5955e8c54a5cb91fcbc600e598018f39428336"
+      }
+    },
+    "IT_telemetry": {
+      "benchmark_name": "IDS2025 Realistic Network Flow Partition",
+      "feature_count_config_a": 79,
+      "feature_count_config_b": 77,
+      "training_partition": {
+        "file": "data/processed/it_realistic/it_train_all.npz",
+        "sha256": "15126e4f8b1b76ab6aa9f204fb5d9e75eb3f90eb30bb587f8d4ede0809209ae8",
+        "rows": 73375
+      },
+      "test_partition": {
+        "file": "data/processed/it_realistic/it_test_all.npz",
+        "sha256": "b66ee0d4431423687c94f8459b49b6d976df04dca15656b9bb8b51ff1b628f5f",
+        "rows": 18344,
+        "classes": {
+          "Normal": 5237,
+          "Dos/DDos": 5191,
+          "PortScan": 5082,
+          "Brute Force": 2040,
+          "Web Attack": 413,
+          "Botnet ARES": 375,
+          "Infiltration": 6
+        }
+      },
+      "preprocessing_pipeline": {
+        "file": "models/it_realistic/preprocessing_all.joblib",
+        "sha256": "dfb95571e99222dd55ef99841d76f5c1ceb88fd3d3fe2cb634c8ad19ef59ed34",
+        "metadata_file": "data/processed/it_realistic/metadata.json"
+      }
+    }
+  }
+}

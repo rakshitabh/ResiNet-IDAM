@@ -1,0 +1,192 @@
+{
+  "benchmark_timestamp": "2026-11-02T05:24:59.339785",
+  "verification_against_plan": {
+    "IT_Random_Forest": {
+      "expected": {
+        "accuracy": 0.9958,
+        "macro_f1": 0.9682
+      },
+      "measured": {
+        "accuracy": 0.9958,
+        "macro_f1": 0.9682
+      },
+      "verified": true
+    },
+    "IT_Autoencoder": {
+      "expected": {
+        "precision": 0.9558,
+        "recall": 0.1155,
+        "f1": 0.2061,
+        "botnet_ares_recall": 0.024
+      },
+      "measured": {
+        "precision": 0.9558,
+        "recall": 0.1155,
+        "f1": 0.2061,
+        "botnet_ares_recall": 0.024
+      },
+      "verified": true
+    },
+    "OT_Autoencoder": {
+      "expected": {
+        "precision": 0.3492,
+        "recall": 0.4639,
+        "f1": 0.3984
+      },
+      "measured": {
+        "precision": 0.3492,
+        "recall": 0.4639,
+        "f1": 0.3984
+      },
+      "verified": true
+    },
+    "OT_Isolation_Forest": {
+      "expected": {
+        "precision": 0.1049,
+        "recall": 0.688,
+        "f1": 0.182,
+        "fp": 17506
+      },
+      "measured": {
+        "precision": 0.1049,
+        "recall": 0.688,
+        "f1": 0.182,
+        "fp": 17506
+      },
+      "verified": true
+    }
+  },
+  "models": {
+    "IT_Random_Forest": {
+      "model_name": "Random Forest (Supervised 79-feature)",
+      "paradigm": "Supervised Multi-Class Classification",
+      "dataset": "IDS2025 Realistic IT Test",
+      "total_samples": 18344,
+      "accuracy": 0.9958,
+      "macro_f1": 0.9682,
+      "per_family": {
+        "Botnet ARES": {
+          "total_samples": 375,
+          "detected": 375,
+          "recall": 1.0
+        },
+        "Brute Force": {
+          "total_samples": 2040,
+          "detected": 2040,
+          "recall": 1.0
+        },
+        "Dos/DDos": {
+          "total_samples": 5191,
+          "detected": 5188,
+          "recall": 0.9994
+        },
+        "Infiltration": {
+          "total_samples": 6,
+          "detected": 4,
+          "recall": 0.6667
+        },
+        "Normal": {
+          "total_samples": 5237,
+          "detected": 5169,
+          "recall": 0.987
+        },
+        "PortScan": {
+          "total_samples": 5082,
+          "detected": 5081,
+          "recall": 0.9998
+        },
+        "Web Attack": {
+          "total_samples": 413,
+          "detected": 411,
+          "recall": 0.9952
+        }
+      }
+    },
+    "IT_Autoencoder": {
+      "model_name": "IT Autoencoder (79 -> 32 -> 16 -> 32 -> 79)",
+      "paradigm": "Unsupervised Novelty Detection",
+      "dataset": "IDS2025 Realistic IT Test",
+      "threshold": 0.638311,
+      "total_samples": 18344,
+      "precision": 0.9558,
+      "recall": 0.1155,
+      "f1": 0.2061,
+      "fpr": 0.0134,
+      "roc_auc": 0.7687,
+      "pr_auc": 0.8668,
+      "confusion_matrix": {
+        "tn": 5167,
+        "fp": 70,
+        "fn": 11593,
+        "tp": 1514
+      },
+      "per_family": {
+        "Botnet ARES": {
+          "total_samples": 375,
+          "detected": 9,
+          "recall": 0.024
+        },
+        "Brute Force": {
+          "total_samples": 2040,
+          "detected": 0,
+          "recall": 0.0
+        },
+        "Dos/DDos": {
+          "total_samples": 5191,
+          "detected": 1491,
+          "recall": 0.2872
+        },
+        "Infiltration": {
+          "total_samples": 6,
+          "detected": 2,
+          "recall": 0.3333
+        },
+        "PortScan": {
+          "total_samples": 5082,
+          "detected": 10,
+          "recall": 0.002
+        },
+        "Web Attack": {
+          "total_samples": 413,
+          "detected": 2,
+          "recall": 0.0048
+        }
+      }
+    },
+    "OT_Autoencoder": {
+      "model_name": "OT Autoencoder (66 -> 32 -> 16 -> 32 -> 66)",
+      "paradigm": "Unsupervised Industrial Anomaly Detection",
+      "dataset": "HAI 21.03/22.04 Test",
+      "threshold": 0.821954,
+      "total_samples": 54000,
+      "precision": 0.3492,
+      "recall": 0.4639,
+      "f1": 0.3984,
+      "fpr": 0.0505,
+      "roc_auc": 0.7639,
+      "confusion_matrix": {
+        "tn": 48441,
+        "fp": 2578,
+        "fn": 1598,
+        "tp": 1383
+      }
+    },
+    "OT_Isolation_Forest": {
+      "model_name": "OT Isolation Forest",
+      "paradigm": "Unsupervised Density Outlier",
+      "dataset": "HAI 21.03/22.04 Test",
+      "total_samples": 54000,
+      "precision": 0.1049,
+      "recall": 0.688,
+      "f1": 0.182,
+      "fpr": 0.3431,
+      "false_positive_count": 17506,
+      "confusion_matrix": {
+        "tn": 33513,
+        "fp": 17506,
+        "fn": 930,
+        "tp": 2051
+      }
+    }
+  }
+}
