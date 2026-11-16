@@ -1,0 +1,115 @@
+{
+  "run_id": "SIM-20261115-112717-983bac",
+  "dataset_name": "test_label_indep",
+  "dataset_hash": "dummy_hash",
+  "start_time_iso": "2026-11-15T11:27:17.209261+00:00",
+  "end_time_iso": "2026-11-15T11:27:17.350280+00:00",
+  "state": "COMPLETED",
+  "speed_multiplier": 1.0,
+  "elapsed_simulation_seconds": 1.0,
+  "active_wall_duration_seconds": 0.14,
+  "total_events": 1,
+  "processed_events": 1,
+  "cancelled_events": 0,
+  "failed_events": 0,
+  "verdict_distribution": {
+    "ALLOW": 0,
+    "REQUIRE VERIFICATION": 0,
+    "DENY": 1
+  },
+  "risk_distribution": {
+    "ALERT_INVESTIGATION": 1
+  },
+  "performance_metrics": {
+    "mean_dispatch_jitter_ms": 0.0,
+    "mean_processing_latency_ms": 140.75
+  },
+  "results": [
+    {
+      "event_id": "EVT_MAL_1",
+      "source": "OT",
+      "event_type": "SETPOINT_OVERRIDE",
+      "user_id": "USR_MAL",
+      "device_id": "DEV_ROGUE",
+      "asset_id": "TURBINE_P4",
+      "scheduled_offset": 1.0,
+      "scheduled_time_iso": "00:00:01",
+      "actual_dispatch_time_iso": "2026-11-15T11:27:17.209280+00:00",
+      "completion_time_iso": "2026-11-15T11:27:17.350031+00:00",
+      "dispatch_jitter_ms": 0.0,
+      "processing_latency_ms": 140.75,
+      "detector_prediction": "NORMAL",
+      "anomaly_score": 0.497635,
+      "detection_threshold": 0.821954,
+      "is_anomaly": false,
+      "risk_score": 77.5,
+      "risk_level": "HIGH",
+      "policy_verdict": "DENY",
+      "recommended_action": "REVOKE_AND_ISOLATE (Simulated Advisory)",
+      "policy_reason": "Critical attack posture detected. The event combines abnormal behavior, high asset criticality, and weakened identity/device trust. Access must be blocked.",
+      "top_contributing_features": [
+        {
+          "feature_name": "P1_PP04SP",
+          "observed_value": -3.9605,
+          "expected_value": -0.4959,
+          "residual_error": 12.003586,
+          "relative_deviation": 6.987
+        },
+        {
+          "feature_name": "P2_24Vdc",
+          "observed_value": -1.9632,
+          "expected_value": 0.1868,
+          "residual_error": 4.6226,
+          "relative_deviation": 11.507
+        },
+        {
+          "feature_name": "P3_LIT01",
+          "observed_value": -0.4037,
+          "expected_value": 0.7165,
+          "residual_error": 1.254791,
+          "relative_deviation": 1.5633
+        },
+        {
+          "feature_name": "P1_PCV02Z",
+          "observed_value": -2.2454,
+          "expected_value": -1.2569,
+          "residual_error": 0.977106,
+          "relative_deviation": 0.7864
+        },
+        {
+          "feature_name": "P2_VIBTR03",
+          "observed_value": 1.2084,
+          "expected_value": 0.2644,
+          "residual_error": 0.890993,
+          "relative_deviation": 3.5696
+        }
+      ],
+      "rule_traces": [
+        {
+          "Rule": "R2: Compromised identity and device trust",
+          "Condition": "identity_trust < 0.40 and device_trust < 0.40 and risk_score >= 60",
+          "Evaluated": "identity=0.10, device=0.10, risk=77.5",
+          "Result": "TRIGGERED"
+        },
+        {
+          "Rule": "R3: Elevated access risk",
+          "Condition": "risk_score >= 60 or identity_trust < 0.60 or device_trust < 0.60",
+          "Evaluated": "risk=77.5, identity=0.10, device=0.10",
+          "Result": "TRIGGERED"
+        }
+      ],
+      "risk_components": {
+        "anomaly_severity": 7.5,
+        "behavior_deviation": 28.5,
+        "identity_untrust": 13.5,
+        "device_untrust": 9.0,
+        "asset_criticality": 19.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": false,
+      "error_message": null,
+      "status": "COMPLETED"
+    }
+  ],
+  "error_message": null
+}

@@ -1,0 +1,246 @@
+{
+  "run_id": "SIM-20261115-114608-8c663e",
+  "dataset_name": "normal_it.csv",
+  "dataset_hash": "d1ee070321b16547d252c5c7339956e0aecb865856d9b9c2014fd5edb0ab0704",
+  "start_time_iso": "2026-11-15T11:46:10.416252+00:00",
+  "end_time_iso": "2026-11-15T11:46:17.245415+00:00",
+  "state": "COMPLETED",
+  "speed_multiplier": 1.0,
+  "elapsed_simulation_seconds": 6.7,
+  "active_wall_duration_seconds": 6.7,
+  "total_events": 3,
+  "processed_events": 3,
+  "cancelled_events": 0,
+  "failed_events": 0,
+  "verdict_distribution": {
+    "ALLOW": 3,
+    "REQUIRE VERIFICATION": 0,
+    "DENY": 0
+  },
+  "risk_distribution": {
+    "ALERT_INVESTIGATION": 0
+  },
+  "performance_metrics": {
+    "mean_dispatch_jitter_ms": 435.338,
+    "mean_processing_latency_ms": 134.951
+  },
+  "results": [
+    {
+      "event_id": "IT_NORM_01",
+      "source": "IT",
+      "event_type": "LOGIN_ATTEMPT",
+      "user_id": "USR_IT_01",
+      "device_id": "DEV_WS_01",
+      "asset_id": "SRV_ACTIVE_DIRECTORY",
+      "scheduled_offset": 1.0,
+      "scheduled_time_iso": "00:00:01",
+      "actual_dispatch_time_iso": "2026-11-15T11:46:11.657287+00:00",
+      "completion_time_iso": "2026-11-15T11:46:11.794282+00:00",
+      "dispatch_jitter_ms": 241.028,
+      "processing_latency_ms": 136.994,
+      "detector_prediction": "Normal",
+      "anomaly_score": 0.022906,
+      "detection_threshold": 0.638311,
+      "is_anomaly": false,
+      "risk_score": 11.65,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "Down Up Ratio",
+          "observed_value": -1.2015,
+          "expected_value": -0.3604,
+          "residual_error": 0.707413,
+          "relative_deviation": 2.3335
+        },
+        {
+          "feature_name": "Bwd Packet Length Max",
+          "observed_value": 0.8471,
+          "expected_value": 0.3031,
+          "residual_error": 0.295893,
+          "relative_deviation": 1.7946
+        },
+        {
+          "feature_name": "Packet Length Mean",
+          "observed_value": 0.1756,
+          "expected_value": 0.701,
+          "residual_error": 0.276021,
+          "relative_deviation": 0.7494
+        },
+        {
+          "feature_name": "Bwd Packet Length Std",
+          "observed_value": 0.8956,
+          "expected_value": 0.3849,
+          "residual_error": 0.260844,
+          "relative_deviation": 1.3268
+        },
+        {
+          "feature_name": "Max Packet Length",
+          "observed_value": 0.8196,
+          "expected_value": 0.3239,
+          "residual_error": 0.245727,
+          "relative_deviation": 1.5303
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 0.9,
+        "behavior_deviation": 1.5,
+        "identity_untrust": 0.75,
+        "device_untrust": 0.5,
+        "asset_criticality": 8.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "error_message": null,
+      "status": "COMPLETED"
+    },
+    {
+      "event_id": "IT_NORM_02",
+      "source": "IT",
+      "event_type": "FILE_SHARE_ACCESS",
+      "user_id": "USR_IT_01",
+      "device_id": "DEV_WS_01",
+      "asset_id": "SRV_FILE_SERVER",
+      "scheduled_offset": 3.0,
+      "scheduled_time_iso": "00:00:03",
+      "actual_dispatch_time_iso": "2026-11-15T11:46:13.776477+00:00",
+      "completion_time_iso": "2026-11-15T11:46:13.920048+00:00",
+      "dispatch_jitter_ms": 360.215,
+      "processing_latency_ms": 143.574,
+      "detector_prediction": "Normal",
+      "anomaly_score": 0.3253,
+      "detection_threshold": 0.638311,
+      "is_anomaly": false,
+      "risk_score": 16.25,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "Destination Port",
+          "observed_value": 0.2594,
+          "expected_value": 3.337,
+          "residual_error": 9.471717,
+          "relative_deviation": 0.9223
+        },
+        {
+          "feature_name": "Bwd Packetss",
+          "observed_value": 21.7399,
+          "expected_value": 18.9385,
+          "residual_error": 7.847981,
+          "relative_deviation": 0.1479
+        },
+        {
+          "feature_name": "Min Packet Length",
+          "observed_value": -0.3398,
+          "expected_value": 2.41,
+          "residual_error": 7.561749,
+          "relative_deviation": 1.141
+        },
+        {
+          "feature_name": "Source Port",
+          "observed_value": -2.8988,
+          "expected_value": -0.3363,
+          "residual_error": 6.566237,
+          "relative_deviation": 7.6192
+        },
+        {
+          "feature_name": "Protocol",
+          "observed_value": -0.3695,
+          "expected_value": 1.1299,
+          "residual_error": 2.247916,
+          "relative_deviation": 1.327
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 7.5,
+        "behavior_deviation": 1.5,
+        "identity_untrust": 0.75,
+        "device_untrust": 0.5,
+        "asset_criticality": 6.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "error_message": null,
+      "status": "COMPLETED"
+    },
+    {
+      "event_id": "IT_NORM_03",
+      "source": "IT",
+      "event_type": "DATABASE_QUERY",
+      "user_id": "USR_IT_02",
+      "device_id": "DEV_WS_02",
+      "asset_id": "SRV_DATABASE",
+      "scheduled_offset": 6.0,
+      "scheduled_time_iso": "00:00:06",
+      "actual_dispatch_time_iso": "2026-11-15T11:46:17.121031+00:00",
+      "completion_time_iso": "2026-11-15T11:46:17.245317+00:00",
+      "dispatch_jitter_ms": 704.773,
+      "processing_latency_ms": 124.286,
+      "detector_prediction": "Normal",
+      "anomaly_score": 0.094091,
+      "detection_threshold": 0.638311,
+      "is_anomaly": false,
+      "risk_score": 19.19,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "Down Up Ratio",
+          "observed_value": 7.6364,
+          "expected_value": 6.3228,
+          "residual_error": 1.725431,
+          "relative_deviation": 0.2077
+        },
+        {
+          "feature_name": "URG Flag Count",
+          "observed_value": 3.7871,
+          "expected_value": 5.0792,
+          "residual_error": 1.669575,
+          "relative_deviation": 0.2544
+        },
+        {
+          "feature_name": "Min Packet Length",
+          "observed_value": -0.0025,
+          "expected_value": -1.143,
+          "residual_error": 1.300741,
+          "relative_deviation": 0.9978
+        },
+        {
+          "feature_name": "Flow IAT Mean",
+          "observed_value": 0.6402,
+          "expected_value": -0.4741,
+          "residual_error": 1.241719,
+          "relative_deviation": 2.3503
+        },
+        {
+          "feature_name": "Bwd IAT Std",
+          "observed_value": 1.1429,
+          "expected_value": 0.1485,
+          "residual_error": 0.988796,
+          "relative_deviation": 6.6963
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 3.69,
+        "behavior_deviation": 3.0,
+        "identity_untrust": 1.5,
+        "device_untrust": 1.0,
+        "asset_criticality": 10.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "error_message": null,
+      "status": "COMPLETED"
+    }
+  ],
+  "error_message": null
+}

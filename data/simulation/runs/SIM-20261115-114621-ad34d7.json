@@ -1,0 +1,246 @@
+{
+  "run_id": "SIM-20261115-114621-ad34d7",
+  "dataset_name": "normal_ot.csv",
+  "dataset_hash": "d464b30d25dff263d8fdd9134a1d6c259d114c5723185bc5569a85b7e3860b9c",
+  "start_time_iso": "2026-11-15T11:46:23.346303+00:00",
+  "end_time_iso": "2026-11-15T11:46:29.033189+00:00",
+  "state": "COMPLETED",
+  "speed_multiplier": 1.0,
+  "elapsed_simulation_seconds": 5.69,
+  "active_wall_duration_seconds": 5.69,
+  "total_events": 3,
+  "processed_events": 3,
+  "cancelled_events": 0,
+  "failed_events": 0,
+  "verdict_distribution": {
+    "ALLOW": 3,
+    "REQUIRE VERIFICATION": 0,
+    "DENY": 0
+  },
+  "risk_distribution": {
+    "ALERT_INVESTIGATION": 0
+  },
+  "performance_metrics": {
+    "mean_dispatch_jitter_ms": 581.279,
+    "mean_processing_latency_ms": 1.59
+  },
+  "results": [
+    {
+      "event_id": "OT_NORM_01",
+      "source": "OT",
+      "event_type": "POLL_PRESSURE",
+      "user_id": "USR_OP_01",
+      "device_id": "DEV_HMI_01",
+      "asset_id": "PLC_PRIMARY_LOOP",
+      "scheduled_offset": 1.0,
+      "scheduled_time_iso": "00:00:01",
+      "actual_dispatch_time_iso": "2026-11-15T11:46:24.775297+00:00",
+      "completion_time_iso": "2026-11-15T11:46:24.776607+00:00",
+      "dispatch_jitter_ms": 428.971,
+      "processing_latency_ms": 1.314,
+      "detector_prediction": "NORMAL",
+      "anomaly_score": 0.497635,
+      "detection_threshold": 0.821954,
+      "is_anomaly": false,
+      "risk_score": 18.25,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "P1_PP04SP",
+          "observed_value": -3.9605,
+          "expected_value": -0.4959,
+          "residual_error": 12.003586,
+          "relative_deviation": 6.987
+        },
+        {
+          "feature_name": "P2_24Vdc",
+          "observed_value": -1.9632,
+          "expected_value": 0.1868,
+          "residual_error": 4.6226,
+          "relative_deviation": 11.507
+        },
+        {
+          "feature_name": "P3_LIT01",
+          "observed_value": -0.4037,
+          "expected_value": 0.7165,
+          "residual_error": 1.254791,
+          "relative_deviation": 1.5633
+        },
+        {
+          "feature_name": "P1_PCV02Z",
+          "observed_value": -2.2454,
+          "expected_value": -1.2569,
+          "residual_error": 0.977106,
+          "relative_deviation": 0.7864
+        },
+        {
+          "feature_name": "P2_VIBTR03",
+          "observed_value": 1.2084,
+          "expected_value": 0.2644,
+          "residual_error": 0.890993,
+          "relative_deviation": 3.5696
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 7.5,
+        "behavior_deviation": 1.5,
+        "identity_untrust": 0.75,
+        "device_untrust": 0.5,
+        "asset_criticality": 8.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "error_message": null,
+      "status": "COMPLETED"
+    },
+    {
+      "event_id": "OT_NORM_02",
+      "source": "OT",
+      "event_type": "POLL_TEMPERATURE",
+      "user_id": "USR_OP_01",
+      "device_id": "DEV_HMI_01",
+      "asset_id": "PLC_PRIMARY_LOOP",
+      "scheduled_offset": 3.0,
+      "scheduled_time_iso": "00:00:03",
+      "actual_dispatch_time_iso": "2026-11-15T11:46:26.975471+00:00",
+      "completion_time_iso": "2026-11-15T11:46:26.977827+00:00",
+      "dispatch_jitter_ms": 629.161,
+      "processing_latency_ms": 2.357,
+      "detector_prediction": "NORMAL",
+      "anomaly_score": 0.455542,
+      "detection_threshold": 0.821954,
+      "is_anomaly": false,
+      "risk_score": 18.25,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "P1_PP04SP",
+          "observed_value": -3.9605,
+          "expected_value": -0.384,
+          "residual_error": 12.791502,
+          "relative_deviation": 9.3148
+        },
+        {
+          "feature_name": "P2_VIBTR03",
+          "observed_value": 2.3656,
+          "expected_value": 0.7785,
+          "residual_error": 2.518872,
+          "relative_deviation": 2.0385
+        },
+        {
+          "feature_name": "P1_PCV02Z",
+          "observed_value": -2.1827,
+          "expected_value": -1.2151,
+          "residual_error": 0.936072,
+          "relative_deviation": 0.7962
+        },
+        {
+          "feature_name": "P3_LIT01",
+          "observed_value": -0.354,
+          "expected_value": 0.5975,
+          "residual_error": 0.905369,
+          "relative_deviation": 1.5924
+        },
+        {
+          "feature_name": "x1001_05_SETPOINT_OUT",
+          "observed_value": -2.1476,
+          "expected_value": -1.2048,
+          "residual_error": 0.888906,
+          "relative_deviation": 0.7826
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 7.5,
+        "behavior_deviation": 1.5,
+        "identity_untrust": 0.75,
+        "device_untrust": 0.5,
+        "asset_criticality": 8.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "error_message": null,
+      "status": "COMPLETED"
+    },
+    {
+      "event_id": "OT_NORM_03",
+      "source": "OT",
+      "event_type": "READ_VALVE_STATUS",
+      "user_id": "USR_OP_02",
+      "device_id": "DEV_HMI_02",
+      "asset_id": "PLC_SECONDARY_LOOP",
+      "scheduled_offset": 5.0,
+      "scheduled_time_iso": "00:00:05",
+      "actual_dispatch_time_iso": "2026-11-15T11:46:29.032019+00:00",
+      "completion_time_iso": "2026-11-15T11:46:29.033116+00:00",
+      "dispatch_jitter_ms": 685.705,
+      "processing_latency_ms": 1.099,
+      "detector_prediction": "NORMAL",
+      "anomaly_score": 0.486974,
+      "detection_threshold": 0.821954,
+      "is_anomaly": false,
+      "risk_score": 21.15,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "P1_PP04SP",
+          "observed_value": -3.9605,
+          "expected_value": -0.1973,
+          "residual_error": 14.161163,
+          "relative_deviation": 19.0682
+        },
+        {
+          "feature_name": "P2_VIBTR03",
+          "observed_value": 2.3656,
+          "expected_value": 0.6689,
+          "residual_error": 2.878772,
+          "relative_deviation": 2.5363
+        },
+        {
+          "feature_name": "P2_VIBTR02",
+          "observed_value": 0.7066,
+          "expected_value": -0.6412,
+          "residual_error": 1.816373,
+          "relative_deviation": 2.102
+        },
+        {
+          "feature_name": "P1_PCV02Z",
+          "observed_value": -2.2454,
+          "expected_value": -1.0925,
+          "residual_error": 1.329103,
+          "relative_deviation": 1.0552
+        },
+        {
+          "feature_name": "x1001_05_SETPOINT_OUT",
+          "observed_value": -2.1476,
+          "expected_value": -1.1303,
+          "residual_error": 1.03477,
+          "relative_deviation": 0.8999
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 7.5,
+        "behavior_deviation": 2.4,
+        "identity_untrust": 0.75,
+        "device_untrust": 0.5,
+        "asset_criticality": 10.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "error_message": null,
+      "status": "COMPLETED"
+    }
+  ],
+  "error_message": null
+}
