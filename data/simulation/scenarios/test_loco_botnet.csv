@@ -1,0 +1,14 @@
+event_id,offset_seconds,source,event_type,user_id,device_id,asset_id,ip_address,mac_address,telemetry_record_id,identity_trust,device_trust,asset_criticality,behavior_deviation,expected_outcome,ground_truth_label,context
+EVT001,1,IT,LOGIN_ATTEMPT,USR_ENG_01,DEV_WS_01,SRV_DOMAIN_CTRL,192.168.1.50,00:1A:2B:00:11:01,0,0.95,0.95,0.40,0.05,ALLOW,Normal,Routine user authentication to domain controller
+EVT002,3,IT,DNS_QUERY,USR_ENG_01,DEV_WS_01,DNS_SERVER,192.168.1.50,00:1A:2B:00:11:01,1,0.95,0.95,0.30,0.05,ALLOW,Normal,Standard internal DNS hostname resolution
+EVT003,5,IT,FILE_TRANSFER,USR_ENG_01,DEV_WS_01,FILE_REPOSITORY,192.168.1.50,00:1A:2B:00:11:01,2,0.90,0.90,0.50,0.10,ALLOW,Normal,Authorized engineering document synchronization
+EVT004,8,IT,C2_BEACON,USR_UNKNOWN,DEV_BOT_01,EXTERNAL_C2_HOST,192.168.1.188,AA:BB:CC:11:22:99,655,0.15,0.10,0.85,0.90,DENY,Botnet ARES,ARES Botnet command-and-control heartbeat detected
+EVT005,11,IT,C2_BEACON,USR_UNKNOWN,DEV_BOT_01,EXTERNAL_C2_HOST,192.168.1.188,AA:BB:CC:11:22:99,670,0.15,0.10,0.85,0.92,DENY,Botnet ARES,Periodic beaconing with encoded payload to external C2
+EVT006,14,IT,DATA_EXFILTRATION,USR_UNKNOWN,DEV_BOT_01,EXTERNAL_C2_HOST,192.168.1.188,AA:BB:CC:11:22:99,680,0.10,0.10,0.95,0.95,DENY,Botnet ARES,Encrypted exfiltration stream over unauthorized outbound port
+EVT007,17,IT,RESOURCE_ACCESS,USR_OP_02,DEV_WS_02,SRV_HISTORIAN,192.168.1.52,00:1A:2B:00:11:02,3,0.92,0.90,0.45,0.08,ALLOW,Normal,Plant historian database query for process logs
+EVT008,20,IT,BOTNET_SPREAD,USR_UNKNOWN,DEV_BOT_01,SUBNET_ENG_192_168_1,192.168.1.188,AA:BB:CC:11:22:99,685,0.10,0.10,0.90,0.94,DENY,Botnet ARES,Lateral propagation attempt scanning subnet for open SMB shares
+EVT009,24,IT,BOTNET_SPREAD,USR_UNKNOWN,DEV_BOT_01,SUBNET_ENG_192_168_1,192.168.1.188,AA:BB:CC:11:22:99,692,0.10,0.10,0.90,0.96,DENY,Botnet ARES,Automated credential brute-force across adjacent workstations
+EVT010,28,IT,WEB_BROWSING,USR_OP_03,DEV_WS_03,INTERNAL_INTRANET,192.168.1.55,00:1A:2B:00:11:03,4,0.95,0.95,0.30,0.05,ALLOW,Normal,Internal standard operating procedure web portal access
+EVT011,32,IT,C2_EXECUTION,USR_UNKNOWN,DEV_BOT_01,SRV_SCADA_BRIDGE,192.168.1.188,AA:BB:CC:11:22:99,696,0.08,0.05,0.95,0.98,DENY,Botnet ARES,Remote payload execution targeting SCADA network bridge
+EVT012,36,IT,AUDIT_LOG_CHECK,USR_LEAD_AUD,DEV_SEC_STATION,SRV_LOG_ARCHIVE,192.168.1.10,00:1A:2B:3C:4D:10,5,0.98,0.95,0.50,0.05,ALLOW,Normal,Security operations center audit log integrity validation
+

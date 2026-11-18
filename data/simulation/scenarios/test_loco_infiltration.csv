@@ -1,0 +1,10 @@
+event_id,offset_seconds,source,event_type,user_id,device_id,asset_id,ip_address,mac_address,telemetry_record_id,identity_trust,device_trust,asset_criticality,behavior_deviation,expected_outcome,ground_truth_label,context
+EVT001,1,IT,LOGIN_ATTEMPT,USR_ENG_02,DEV_WS_02,SRV_ACTIVE_DIRECTORY,192.168.1.60,00:1A:2B:00:22:01,0,0.95,0.95,0.40,0.05,ALLOW,Normal,Routine domain authentication
+EVT002,4,IT,FILE_READ,USR_ENG_02,DEV_WS_02,SRV_DOC_VAULT,192.168.1.60,00:1A:2B:00:22:01,1,0.95,0.95,0.30,0.05,ALLOW,Normal,Standard process specification document review
+EVT003,8,IT,SPEAR_PHISH_EXEC,USR_STOLEN_OP,DEV_COMPROMISED_02,WORKSTATION_02,192.168.1.190,AA:00:11:22:33:99,780,0.25,0.20,0.80,0.85,REQUIRE_VERIFICATION,Infiltration,Malicious macro execution from targeted spear phishing attachment
+EVT004,12,IT,PRIVILEGE_ESCALATION,USR_STOLEN_OP,DEV_COMPROMISED_02,LOCAL_SAM_DB,192.168.1.190,AA:00:11:22:33:99,781,0.15,0.10,0.90,0.92,DENY,Infiltration,Local security authority privilege escalation attempt
+EVT005,16,IT,INTERNAL_RECON,USR_STOLEN_OP,DEV_COMPROMISED_02,SRV_DOMAIN_CONTROLLER,192.168.1.190,AA:00:11:22:33:99,783,0.10,0.10,0.95,0.95,DENY,Infiltration,Domain enumeration and active directory schema dump
+EVT006,20,IT,DATABASE_BACKUP,USR_DB_ADMIN,DEV_SEC_ADMIN,SRV_DATABASE,192.168.1.12,00:1A:2B:00:22:12,2,0.98,0.98,0.60,0.05,ALLOW,Normal,Scheduled daily transactional database backup
+EVT007,25,IT,SHADOW_COPY_DELETE,USR_STOLEN_OP,DEV_COMPROMISED_02,STORAGE_CLUSTER,192.168.1.190,AA:00:11:22:33:99,784,0.08,0.05,0.95,0.98,DENY,Infiltration,VSS shadow volume deletion preparing ransomware staging
+EVT008,30,IT,INCIDENT_RESPONSE,USR_SOC_ANALYST,DEV_SOC_CONSOLE,NETWORK_MONITOR,192.168.1.15,00:1A:2B:00:22:15,3,0.98,0.98,0.70,0.05,ALLOW,Normal,Security operations analyst initiating containment protocol
+

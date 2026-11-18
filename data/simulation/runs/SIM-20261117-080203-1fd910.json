@@ -1,0 +1,43 @@
+{
+  "run_id": "SIM-20261117-080203-1fd910",
+  "experiment_id": "LOCO-04",
+  "domain": "IT + OT",
+  "dataset_name": "zero_trust_simulation_scenarios.csv",
+  "dataset_hash": "6eea65308b51dd2514d057ec53a74c56928e29618eebe005e6f584a395ed2170",
+  "start_time_iso": null,
+  "end_time_iso": null,
+  "state": "READY",
+  "speed_multiplier": 1.0,
+  "elapsed_simulation_seconds": 0.0,
+  "active_wall_duration_seconds": 0.0,
+  "total_events": 12,
+  "processed_events": 0,
+  "cancelled_events": 0,
+  "failed_events": 0,
+  "classification_metrics": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "tn": 0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "fpr": 0.0,
+    "accuracy": 0.0
+  },
+  "per_class_recall": {},
+  "verdict_distribution": {
+    "ALLOW": 0,
+    "REQUIRE VERIFICATION": 0,
+    "DENY": 0
+  },
+  "risk_distribution": {
+    "ALERT_INVESTIGATION": 0
+  },
+  "performance_metrics": {
+    "mean_dispatch_jitter_ms": 0.0,
+    "mean_processing_latency_ms": 0.0
+  },
+  "results": [],
+  "error_message": null
+}

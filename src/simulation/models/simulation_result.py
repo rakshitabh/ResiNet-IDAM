@@ -35,6 +35,9 @@ class SimulationEventResult:
     risk_components: dict[str, float] = field(default_factory=dict)
     expected_outcome: str | None = None
     outcome_matched: bool | None = None
+    ground_truth_label: str = "Normal"
+    is_attack_ground_truth: bool = False
+    classification_result: str = "TN"
     error_message: str | None = None
     status: str = "COMPLETED"
 
@@ -66,6 +69,9 @@ class SimulationEventResult:
             "risk_components": self.risk_components,
             "expected_outcome": self.expected_outcome,
             "outcome_matched": self.outcome_matched,
+            "ground_truth_label": self.ground_truth_label,
+            "is_attack_ground_truth": self.is_attack_ground_truth,
+            "classification_result": self.classification_result,
             "error_message": self.error_message,
             "status": self.status,
         }

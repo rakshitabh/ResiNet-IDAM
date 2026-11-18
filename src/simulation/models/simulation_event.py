@@ -37,6 +37,8 @@ class SimulationEvent:
     asset_criticality: float = 0.50
     behavior_deviation: float = 0.10
     expected_outcome: str | None = None
+    ground_truth_label: str = "Normal"
+    is_attack_ground_truth: bool = False
     row_number: int = 1
     state: EventState = EventState.PENDING
     context: str = ""
@@ -58,6 +60,8 @@ class SimulationEvent:
             "asset_criticality": self.asset_criticality,
             "behavior_deviation": self.behavior_deviation,
             "expected_outcome": self.expected_outcome,
+            "ground_truth_label": self.ground_truth_label,
+            "is_attack_ground_truth": self.is_attack_ground_truth,
             "row_number": self.row_number,
             "state": self.state.value,
             "context": self.context,

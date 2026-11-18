@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+from src.evaluation.metrics import calculate_classification_metrics, calculate_per_class_recall
 from src.simulation.models.simulation_result import SimulationEventResult
 
 
@@ -23,6 +24,8 @@ class SimulationRun:
     run_id: str
     dataset_name: str
     dataset_hash: str
+    experiment_id: str = "LOCO-04"
+    domain: str = "IT + OT"
     start_time_iso: str | None = None
     end_time_iso: str | None = None
     state: RunState = RunState.READY
@@ -39,6 +42,19 @@ class SimulationRun:
     alert_investigation_count: int = 0
     mean_dispatch_jitter_ms: float = 0.0
     mean_processing_latency_ms: float = 0.0
+    # Research Evaluation Metrics (from image)
+    tp: int = 0
+    fp: int = 0
+    fn: int = 0
+    tn: int = 0
+    precision: float = 0.0
+    recall: float = 0.0
+    f1_score: float = 0.0
+    fpr: float = 0.0
+    accuracy: float = 0.0
+    per_class_recall: dict[str, float] = field(default_factory=dict)
+    anomaly_scores_normal: list[float] = field(default_factory=list)
+    anomaly_scores_attack: list[float] = field(default_factory=list)
     results: list[SimulationEventResult] = field(default_factory=list)
     error_message: str | None = None
 
@@ -57,10 +73,42 @@ class SimulationRun:
             self.mean_dispatch_jitter_ms = sum(r.dispatch_jitter_ms for r in completed) / len(completed)
             self.mean_processing_latency_ms = sum(r.processing_latency_ms for r in completed) / len(completed)
 
+            # Update TP/FP/FN/TN
+            self.tp = len([r for r in completed if r.classification_result == "TP"])
+            self.fp = len([r for r in completed if r.classification_result == "FP"])
+            self.fn = len([r for r in completed if r.classification_result == "FN"])
+            self.tn = len([r for r in completed if r.classification_result == "TN"])
+
+            metrics = calculate_classification_metrics(self.tp, self.fp, self.fn, self.tn)
+            self.precision = metrics["precision"]
+            self.recall = metrics["recall"]
+            self.f1_score = metrics["f1_score"]
+            self.fpr = metrics["fpr"]
+            self.accuracy = metrics["accuracy"]
+
+            # Per-class recall
+            class_breakdown: dict[str, dict[str, int]] = {}
+            for r in completed:
+                if r.is_attack_ground_truth:
+                    cname = r.ground_truth_label or "Attack"
+                    if cname not in class_breakdown:
+                        class_breakdown[cname] = {"tp": 0, "fn": 0}
+                    if r.classification_result == "TP":
+                        class_breakdown[cname]["tp"] += 1
+                    elif r.classification_result == "FN":
+                        class_breakdown[cname]["fn"] += 1
+            self.per_class_recall = calculate_per_class_recall(class_breakdown)
+
+            # Anomaly scores
+            self.anomaly_scores_normal = [r.anomaly_score for r in completed if not r.is_attack_ground_truth]
+            self.anomaly_scores_attack = [r.anomaly_score for r in completed if r.is_attack_ground_truth]
+
     def to_dict(self) -> dict[str, Any]:
         self.update_metrics()
         return {
             "run_id": self.run_id,
+            "experiment_id": self.experiment_id,
+            "domain": self.domain,
             "dataset_name": self.dataset_name,
             "dataset_hash": self.dataset_hash,
             "start_time_iso": self.start_time_iso,
@@ -73,6 +121,18 @@ class SimulationRun:
             "processed_events": self.processed_events,
             "cancelled_events": self.cancelled_events,
             "failed_events": self.failed_events,
+            "classification_metrics": {
+                "tp": self.tp,
+                "fp": self.fp,
+                "fn": self.fn,
+                "tn": self.tn,
+                "precision": self.precision,
+                "recall": self.recall,
+                "f1_score": self.f1_score,
+                "fpr": self.fpr,
+                "accuracy": self.accuracy,
+            },
+            "per_class_recall": self.per_class_recall,
             "verdict_distribution": {
                 "ALLOW": self.allow_count,
                 "REQUIRE VERIFICATION": self.require_verification_count,

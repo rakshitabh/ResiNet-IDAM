@@ -8,6 +8,7 @@ import time
 from typing import Any
 from uuid import uuid4
 
+from src.evaluation.metrics import determine_classification_result
 from src.simulation.engine.event_scheduler import EventScheduler
 from src.simulation.engine.simulation_clock import SimulationClock
 from src.simulation.integration.detection_adapter import DetectionAdapter
@@ -55,6 +56,8 @@ class SimulationController:
                 asset_criticality=e.asset_criticality,
                 behavior_deviation=e.behavior_deviation,
                 expected_outcome=e.expected_outcome,
+                ground_truth_label=e.ground_truth_label,
+                is_attack_ground_truth=e.is_attack_ground_truth,
                 row_number=e.row_number,
                 state=EventState.PENDING,
                 context=e.context,
@@ -64,11 +67,28 @@ class SimulationController:
         self.scheduler = EventScheduler(self._raw_events)
         self.clock.reset()
 
+        # Determine domain from events
+        sources = {e.source.value for e in self._raw_events}
+        domain_str = "IT + OT" if len(sources) > 1 else (next(iter(sources)) if sources else "IT + OT")
+
+        # Extract or infer experiment ID from dataset_name
+        exp_id = "LOCO-04"
+        if "botnet" in dataset_name.lower():
+            exp_id = "LOCO-04 : Botnet ARES (Unseen)"
+        elif "infiltrat" in dataset_name.lower():
+            exp_id = "LOCO-05 : Infiltration (Unseen)"
+        elif "dos" in dataset_name.lower():
+            exp_id = "LOCO-01 : DoS/DDoS (Unseen)"
+        elif "valve" in dataset_name.lower() or "ot" in dataset_name.lower():
+            exp_id = "OT-01 : Actuator Tamper (Unseen)"
+
         run_id = f"SIM-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid4().hex[:6]}"
         self.current_run = SimulationRun(
             run_id=run_id,
             dataset_name=dataset_name,
             dataset_hash=dataset_hash,
+            experiment_id=exp_id,
+            domain=domain_str,
             total_events=len(self._raw_events),
             state=RunState.READY,
         )
@@ -176,6 +196,12 @@ class SimulationController:
         t_complete_dt = datetime.now(timezone.utc)
         proc_latency_ms = max(0.0, (t_complete_mono - t_dispatch_mono) * 1000.0)
 
+        # Scientific evaluation against isolated ground truth (Rule 4)
+        classification_res = determine_classification_result(
+            is_predicted_anomaly=det_result["is_anomaly"],
+            is_actual_attack=event.is_attack_ground_truth,
+        )
+
         # Compare with expected outcome if provided
         outcome_matched = None
         if event.expected_outcome:
@@ -212,6 +238,9 @@ class SimulationController:
             risk_components=risk_result["risk_components"],
             expected_outcome=event.expected_outcome,
             outcome_matched=outcome_matched,
+            ground_truth_label=event.ground_truth_label,
+            is_attack_ground_truth=event.is_attack_ground_truth,
+            classification_result=classification_res,
             status="COMPLETED",
         )
         return result

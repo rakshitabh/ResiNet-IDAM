@@ -71,6 +71,15 @@ class SimulationCsvParser:
             if exp_outcome:
                 exp_outcome = exp_outcome.strip().upper().replace(" ", "_")
 
+            # Extract ground-truth label strictly for evaluation post-prediction (Rule 4)
+            gt_label = cleaned_row.get("ground_truth_label") or cleaned_row.get("label") or ""
+            if not gt_label and exp_outcome:
+                gt_label = "Attack" if exp_outcome in ("DENY", "REQUIRE_VERIFICATION") else "Normal"
+            elif not gt_label:
+                gt_label = "Normal"
+            
+            is_atk = str(gt_label).strip().lower() not in ("normal", "benign", "0", "false", "")
+
             event = SimulationEvent(
                 event_id=cleaned_row["event_id"],
                 offset_seconds=offset,
@@ -87,6 +96,8 @@ class SimulationCsvParser:
                 asset_criticality=asset_crit,
                 behavior_deviation=beh_dev,
                 expected_outcome=exp_outcome,
+                ground_truth_label=str(gt_label).strip(),
+                is_attack_ground_truth=is_atk,
                 row_number=idx,
                 state=EventState.PENDING,
                 context=cleaned_row.get("context", ""),

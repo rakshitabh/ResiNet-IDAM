@@ -1,0 +1,9 @@
+event_id,offset_seconds,source,event_type,user_id,device_id,asset_id,ip_address,mac_address,telemetry_record_id,identity_trust,device_trust,asset_criticality,behavior_deviation,expected_outcome,ground_truth_label,context
+EVT001,1,IT,LOGIN_ATTEMPT,USR_ENG_03,DEV_WS_03,SRV_SCADA_GW,192.168.1.70,00:1A:2B:00:33:01,0,0.95,0.95,0.50,0.05,ALLOW,Normal,Routine engineer session start
+EVT002,3,IT,SYN_FLOOD_BURST,USR_UNKNOWN,DEV_FLOODER_01,SRV_SCADA_GW,10.0.0.88,AA:11:22:33:44:55,250,0.10,0.05,0.90,0.95,DENY,DoS/DDoS,High-frequency TCP SYN packet surge exceeding interface capacity
+EVT003,6,IT,SYN_FLOOD_BURST,USR_UNKNOWN,DEV_FLOODER_02,SRV_SCADA_GW,10.0.0.89,AA:11:22:33:44:56,260,0.10,0.05,0.90,0.95,DENY,DoS/DDoS,Distributed flooding source targeting gateway port 502
+EVT004,9,IT,UDP_AMPLIFICATION,USR_UNKNOWN,DEV_FLOODER_03,SRV_SCADA_GW,10.0.0.90,AA:11:22:33:44:57,270,0.08,0.05,0.95,0.98,DENY,DoS/DDoS,UDP reflection surge saturating ingress network link
+EVT005,13,IT,TELEMETRY_POLL,USR_ENG_03,DEV_WS_03,PLC_BOILER_FEED,192.168.1.70,00:1A:2B:00:33:01,1,0.90,0.90,0.60,0.10,ALLOW,Normal,Operator telemetry check under elevated network latency
+EVT006,17,IT,FLOW_EXHAUSTION,USR_UNKNOWN,DEV_FLOODER_01,SRV_SCADA_GW,10.0.0.88,AA:11:22:33:44:55,310,0.05,0.05,0.95,0.99,DENY,DoS/DDoS,Connection pool starvation attack
+EVT007,22,IT,RATE_LIMIT_ENGAGE,SYS_FIREWALL,DEV_FW_EDGE,INGRESS_ROUTER,192.168.1.1,00:1A:2B:00:00:01,2,0.99,0.99,0.80,0.05,ALLOW,Normal,Automatic edge traffic shaping and scrubbing activation
+

@@ -1,0 +1,119 @@
+{
+  "run_id": "SIM-20261117-080150-9c37c7",
+  "experiment_id": "LOCO-04",
+  "domain": "IT + OT",
+  "dataset_name": "zero_trust_simulation_scenarios.csv",
+  "dataset_hash": "6eea65308b51dd2514d057ec53a74c56928e29618eebe005e6f584a395ed2170",
+  "start_time_iso": "2026-11-17T08:01:59.045971+00:00",
+  "end_time_iso": null,
+  "state": "RUNNING",
+  "speed_multiplier": 1.0,
+  "elapsed_simulation_seconds": 2.46,
+  "active_wall_duration_seconds": 2.46,
+  "total_events": 12,
+  "processed_events": 1,
+  "cancelled_events": 0,
+  "failed_events": 0,
+  "classification_metrics": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "tn": 1,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "fpr": 0.0,
+    "accuracy": 1.0
+  },
+  "per_class_recall": {},
+  "verdict_distribution": {
+    "ALLOW": 1,
+    "REQUIRE VERIFICATION": 0,
+    "DENY": 0
+  },
+  "risk_distribution": {
+    "ALERT_INVESTIGATION": 0
+  },
+  "performance_metrics": {
+    "mean_dispatch_jitter_ms": 463.953,
+    "mean_processing_latency_ms": 1.246
+  },
+  "results": [
+    {
+      "event_id": "EVT001",
+      "source": "OT",
+      "event_type": "LOGIN_ATTEMPT",
+      "user_id": "USR_ENG_01",
+      "device_id": "DEV_SCADA_WS01",
+      "asset_id": "SCADA-GW",
+      "scheduled_offset": 2.0,
+      "scheduled_time_iso": "00:00:02",
+      "actual_dispatch_time_iso": "2026-11-17T08:02:01.509935+00:00",
+      "completion_time_iso": "2026-11-17T08:02:01.511179+00:00",
+      "dispatch_jitter_ms": 463.953,
+      "processing_latency_ms": 1.246,
+      "detector_prediction": "NORMAL",
+      "anomaly_score": 0.497635,
+      "detection_threshold": 0.821954,
+      "is_anomaly": false,
+      "risk_score": 14.68,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "P1_PP04SP",
+          "observed_value": -3.9605,
+          "expected_value": -0.4959,
+          "residual_error": 12.003586,
+          "relative_deviation": 6.987
+        },
+        {
+          "feature_name": "P2_24Vdc",
+          "observed_value": -1.9632,
+          "expected_value": 0.1868,
+          "residual_error": 4.6226,
+          "relative_deviation": 11.507
+        },
+        {
+          "feature_name": "P3_LIT01",
+          "observed_value": -0.4037,
+          "expected_value": 0.7165,
+          "residual_error": 1.254791,
+          "relative_deviation": 1.5633
+        },
+        {
+          "feature_name": "P1_PCV02Z",
+          "observed_value": -2.2454,
+          "expected_value": -1.2569,
+          "residual_error": 0.977106,
+          "relative_deviation": 0.7864
+        },
+        {
+          "feature_name": "P2_VIBTR03",
+          "observed_value": 1.2084,
+          "expected_value": 0.2644,
+          "residual_error": 0.890993,
+          "relative_deviation": 3.5696
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 3.03,
+        "behavior_deviation": 2.4,
+        "identity_untrust": 0.75,
+        "device_untrust": 0.5,
+        "asset_criticality": 8.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "ground_truth_label": "Normal",
+      "is_attack_ground_truth": false,
+      "classification_result": "TN",
+      "error_message": null,
+      "status": "COMPLETED"
+    }
+  ],
+  "error_message": null
+}

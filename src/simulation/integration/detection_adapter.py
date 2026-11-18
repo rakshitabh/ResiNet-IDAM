@@ -43,14 +43,22 @@ class DetectionAdapter:
             top_features = scored.get("top_contributing_features", [])
 
         is_anomaly = bool(raw_result.anomaly_decision)
-        anomaly_score = float(raw_result.anomaly_score)
-        threshold = float(raw_result.threshold) if raw_result.threshold else 0.089945
+        if raw_result.prediction.upper() not in ("NORMAL", "BENIGN"):
+            is_anomaly = True
 
-        # Normalize anomaly severity to [0.0, 1.0]
-        if threshold > 0:
-            anomaly_severity = min(max(0.0, anomaly_score / threshold), 1.0) if is_anomaly else min(0.3, anomaly_score / threshold)
+        anomaly_score = float(raw_result.anomaly_score)
+        threshold = float(raw_result.threshold) if raw_result.threshold else 0.50
+        if anomaly_score >= threshold and threshold > 0:
+            is_anomaly = True
+
+        # Normalize anomaly severity to [0.0, 1.0] for 5-factor risk engine
+        if is_anomaly:
+            anomaly_severity = min(1.0, max(0.70, anomaly_score / max(threshold, 1e-4) * 0.75))
         else:
-            anomaly_severity = 1.0 if is_anomaly else 0.0
+            if threshold > 0:
+                anomaly_severity = min(0.20, (anomaly_score / threshold) * 0.20)
+            else:
+                anomaly_severity = 0.05
 
         return {
             "detector_name": raw_result.detector,

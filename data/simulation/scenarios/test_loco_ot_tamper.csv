@@ -1,0 +1,8 @@
+event_id,offset_seconds,source,event_type,user_id,device_id,asset_id,ip_address,mac_address,telemetry_record_id,identity_trust,device_trust,asset_criticality,behavior_deviation,expected_outcome,ground_truth_label,context
+EVT001,1,OT,NORMAL_FLOW_POLL,USR_OP_01,DEV_HMI_01,PLC_01_PRIMARY,192.168.1.20,00:1A:2B:EE:01:01,0,0.95,0.95,0.40,0.05,ALLOW,Normal,Steady-state physical telemetry readout on P1_FIT01
+EVT002,3,OT,NORMAL_LEVEL_POLL,USR_OP_01,DEV_HMI_01,PLC_01_PRIMARY,192.168.1.20,00:1A:2B:EE:01:01,1,0.95,0.95,0.40,0.05,ALLOW,Normal,Water tank level check on P1_LIT01
+EVT003,6,OT,SETPOINT_OVERRIDE,USR_UNKNOWN,DEV_ROGUE_PLC_TOOL,P1_FCV01D_FLOWVALVE,192.168.1.199,AA:00:11:22:33:44,1600,0.15,0.10,0.85,0.92,DENY,Actuator Tamper,Unauthorized flow valve override setpoint injected over Modbus
+EVT004,9,OT,PRESSURE_SURGE,SYS_SENSOR_MON,DEV_FIELD_BUS,P1_PIT01_PRESSURE,192.168.1.200,AA:00:11:22:33:55,1700,0.90,0.85,0.80,0.85,DENY,Actuator Tamper,Severe physical overpressure surge on primary loop following valve closure
+EVT005,12,OT,INTERLOCK_SIGNAL,SYS_SAFETY_PLC,DEV_SIS_01,P2_EMERG_SHUTDOWN,192.168.1.210,00:1A:2B:FF:EE:DD,1750,0.98,0.98,0.95,0.70,DENY,Actuator Tamper,Safety interlock trip command triggered by pressure boundary violation
+EVT006,16,OT,POST_TRIP_AUDIT,USR_SAFETY_ENG,DEV_ENG_STATION,DIAGNOSTIC_LOGGER,192.168.1.15,00:1A:2B:EE:01:15,2,0.98,0.95,0.60,0.05,ALLOW,Normal,Post-trip safety diagnostic log capture
+
