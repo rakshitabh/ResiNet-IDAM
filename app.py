@@ -7,6 +7,7 @@ import streamlit as st
 
 from src.application.detection_service import DetectionService
 from src.infrastructure.config import AppConfig
+from src.ui.simulation_view import render_simulation_view
 from src.ui.views import (
     load_dataset,
     load_metrics,
@@ -60,6 +61,7 @@ def main() -> None:
             [
                 "Operations overview",
                 "Detection workspace",
+                "Zero-Trust simulation",
                 "Alert management",
                 "Risk assessment",
                 "Model and data health",
@@ -84,6 +86,8 @@ def main() -> None:
         render_overview(service)
     elif page == "Detection workspace":
         render_detection(service)
+    elif page == "Zero-Trust simulation":
+        render_simulation_view(service)
     elif page == "Alert management":
         render_alerts(service)
     elif page == "Risk assessment":

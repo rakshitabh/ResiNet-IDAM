@@ -1,0 +1,5 @@
+event_id,offset_seconds,source,event_type,user_id,device_id,asset_id,ip_address,mac_address,telemetry_record_id,identity_trust,device_trust,asset_criticality,behavior_deviation,expected_outcome
+IT_NORM_01,1.0,IT,LOGIN_ATTEMPT,USR_IT_01,DEV_WS_01,SRV_ACTIVE_DIRECTORY,192.168.1.50,00:1A:2B:00:11:01,0,0.95,0.95,0.40,0.05,ALLOW
+IT_NORM_02,3.0,IT,FILE_SHARE_ACCESS,USR_IT_01,DEV_WS_01,SRV_FILE_SERVER,192.168.1.50,00:1A:2B:00:11:01,1,0.95,0.95,0.30,0.05,ALLOW
+IT_NORM_03,6.0,IT,DATABASE_QUERY,USR_IT_02,DEV_WS_02,SRV_DATABASE,192.168.1.52,00:1A:2B:00:11:02,2,0.90,0.90,0.50,0.10,ALLOW
+

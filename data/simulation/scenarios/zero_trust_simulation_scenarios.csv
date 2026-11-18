@@ -1,0 +1,14 @@
+event_id,offset_seconds,source,event_type,user_id,device_id,asset_id,ip_address,mac_address,telemetry_record_id,identity_trust,device_trust,asset_criticality,behavior_deviation,expected_outcome,context
+EVT001,2,OT,LOGIN_ATTEMPT,USR_ENG_01,DEV_SCADA_WS01,SCADA-GW,192.168.1.15,00:1A:2B:3C:4D:01,0,0.95,0.95,0.40,0.08,ALLOW,Routine morning login from authorized engineering console.
+EVT002,5,OT,RESOURCE_ACCESS,USR_ENG_01,DEV_SCADA_WS01,PLC-01-PRIMARY-LOOP,192.168.1.15,00:1A:2B:3C:4D:01,1,0.95,0.95,0.50,0.12,ALLOW,Normal telemetry read on Primary Loop sensors P1_FIT01 and P1_LIT01.
+EVT003,9,OT,RESOURCE_ACCESS,USR_OP_04,DEV_FIELD_TABLET,P1_PP01AD_FEEDPUMP,192.168.1.44,00:1A:2B:3C:4D:44,2,0.70,0.65,0.60,0.45,REQUIRE_VERIFICATION,Off-shift operator querying Boiler Feed Pump controller status.
+EVT004,14,IT,LOGIN_ATTEMPT,USR_UNKNOWN,DEV_ROGUE_LAPTOP,SCADA-GW,192.168.1.188,AA:BB:CC:DD:EE:09,0,0.30,0.20,0.70,0.60,REQUIRE_VERIFICATION,Unregistered MAC address attempting authentication on engineering subnet.
+EVT005,19,IT,LOGIN_ATTEMPT,USR_UNKNOWN,DEV_ROGUE_LAPTOP,SCADA-GW,192.168.1.188,AA:BB:CC:DD:EE:09,500,0.20,0.15,0.75,0.75,REQUIRE_VERIFICATION,Repeated brute-force authentication failures on SCADA Gateway.
+EVT006,25,IT,PORT_SCAN,USR_UNKNOWN,DEV_ROGUE_LAPTOP,SUBNET_PLC_192_168_1,192.168.1.188,AA:BB:CC:DD:EE:09,350,0.15,0.10,0.70,0.85,DENY,Modbus port 502 sweep across PLC subnet.
+EVT007,32,OT,SETPOINT_OVERRIDE,USR_STOLEN_ENG,DEV_ROGUE_LAPTOP,P1_FCV01D_FLOWVALVE,192.168.1.188,AA:BB:CC:DD:EE:09,1600,0.25,0.15,0.85,0.90,DENY,Unauthorized flow valve override using stolen credentials.
+EVT008,38,OT,COMMAND_INJECTION,USR_UNKNOWN,DEV_ROGUE_LAPTOP,TURBINE_P4_TRIP,192.168.1.188,AA:BB:CC:DD:EE:09,1700,0.10,0.10,0.95,0.95,DENY,Critical attack injecting emergency trip command to Turbine P4 (Rule R1).
+EVT009,44,OT,TELEMETRY_ANOMALY,SYS_SENSOR_MON,DEV_SENS_NET,P1_PIT01_PRESSURE,192.168.1.200,00:1A:2B:3C:4D:EE,1750,0.90,0.90,0.80,0.85,REQUIRE_VERIFICATION,Severe physical pressure spike detected on P1_PIT01.
+EVT010,50,OT,SAFETY_INTERLOCK,SYS_SAFETY_PLC,DEV_SIS_01,P2_EMERG_SHUTDOWN,192.168.1.210,00:1A:2B:3C:4D:FF,1800,0.98,0.98,0.95,0.70,DENY,Safety Instrumented System (SIS) physical trip signal verification.
+EVT011,55,IT,FORENSIC_ACCESS,USR_LEAD_AUD,DEV_SEC_STATION,INCIDENT_LOGS_DB,192.168.1.10,00:1A:2B:3C:4D:10,3,0.98,0.95,0.60,0.10,ALLOW,Lead Security Auditor initiating post-incident forensic capture.
+EVT012,60,IT,INCIDENT_ARCHIVE,USR_LEAD_AUD,DEV_SEC_STATION,COLD_STORAGE_VAULT,192.168.1.10,00:1A:2B:3C:4D:10,4,0.98,0.95,0.50,0.05,ALLOW,Cryptographic signing and archiving of session event audit logs.
+

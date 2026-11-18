@@ -1,0 +1,7 @@
+event_id,offset_seconds,event_type,user_id,device_id,ip_address,mac_address,resource,context
+EVT001,3,LOGIN_ATTEMPT,USR_ENG_01,DEV_SCADA_WS01,192.168.1.15,00:1A:2B:3C:4D:01,SCADA-GW,Authorized engineer login from trusted console
+EVT002,4,RESOURCE_ACCESS,USR_ENG_01,DEV_SCADA_WS01,192.168.1.15,00:1A:2B:3C:4D:01,PLC-01,Normal polling of primary loop sensor telemetry
+EVT003,6,LOGIN_ATTEMPT,USR_UNKNOWN,DEV_ROGUE_LAPTOP,192.168.1.99,AA:BB:CC:DD:EE:09,SCADA-GW,Unrecognized device detected on OT network segment
+EVT004,10,RESOURCE_ACCESS,USR_UNKNOWN,DEV_ROGUE_LAPTOP,192.168.1.99,AA:BB:CC:DD:EE:09,PLC-01,Unusual setpoint modification pattern on valve controller
+EVT005,15,LOGIN_ATTEMPT,USR_UNKNOWN,DEV_ROGUE_LAPTOP,192.168.1.99,AA:BB:CC:DD:EE:09,SCADA-GW,Repeated authentication failures and credential stuffing
+

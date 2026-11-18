@@ -1,0 +1,359 @@
+{
+  "run_id": "SIM-20261116-120321-26ec04",
+  "experiment_id": "LOCO-04",
+  "domain": "IT + OT",
+  "dataset_name": "test_risk_scale",
+  "dataset_hash": "6c1e3ee1f5590000299ea8fb028e3cc8c2c4f8ff34629c494ebd59ef9c23cb14",
+  "start_time_iso": "2026-11-16T12:03:21.520396+00:00",
+  "end_time_iso": "2026-11-16T12:03:26.855214+00:00",
+  "state": "COMPLETED",
+  "speed_multiplier": 1.0,
+  "elapsed_simulation_seconds": 9.0,
+  "active_wall_duration_seconds": 5.33,
+  "total_events": 4,
+  "processed_events": 4,
+  "cancelled_events": 0,
+  "failed_events": 0,
+  "classification_metrics": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 2,
+    "tn": 2,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "fpr": 0.0,
+    "accuracy": 0.5
+  },
+  "per_class_recall": {
+    "Attack": 0.0
+  },
+  "verdict_distribution": {
+    "ALLOW": 3,
+    "REQUIRE VERIFICATION": 0,
+    "DENY": 1
+  },
+  "risk_distribution": {
+    "ALERT_INVESTIGATION": 1
+  },
+  "performance_metrics": {
+    "mean_dispatch_jitter_ms": 0.0,
+    "mean_processing_latency_ms": 1333.594
+  },
+  "results": [
+    {
+      "event_id": "MIX_01",
+      "source": "IT",
+      "event_type": "VPN_LOGIN",
+      "user_id": "USR_REMOTE_ENG",
+      "device_id": "DEV_REMOTE_LAPTOP",
+      "asset_id": "SCADA_VPN_GATEWAY",
+      "scheduled_offset": 1.0,
+      "scheduled_time_iso": "00:00:01",
+      "actual_dispatch_time_iso": "2026-11-16T12:03:21.520406+00:00",
+      "completion_time_iso": "2026-11-16T12:03:26.725746+00:00",
+      "dispatch_jitter_ms": 0.0,
+      "processing_latency_ms": 5205.333,
+      "detector_prediction": "Normal",
+      "anomaly_score": 0.022906,
+      "detection_threshold": 0.638311,
+      "is_anomaly": false,
+      "risk_score": 18.9,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "Down Up Ratio",
+          "observed_value": -1.2015,
+          "expected_value": -0.3604,
+          "residual_error": 0.707413,
+          "relative_deviation": 2.3335
+        },
+        {
+          "feature_name": "Bwd Packet Length Max",
+          "observed_value": 0.8471,
+          "expected_value": 0.3031,
+          "residual_error": 0.295893,
+          "relative_deviation": 1.7946
+        },
+        {
+          "feature_name": "Packet Length Mean",
+          "observed_value": 0.1756,
+          "expected_value": 0.701,
+          "residual_error": 0.276021,
+          "relative_deviation": 0.7494
+        },
+        {
+          "feature_name": "Bwd Packet Length Std",
+          "observed_value": 0.8956,
+          "expected_value": 0.3849,
+          "residual_error": 0.260844,
+          "relative_deviation": 1.3268
+        },
+        {
+          "feature_name": "Max Packet Length",
+          "observed_value": 0.8196,
+          "expected_value": 0.3239,
+          "residual_error": 0.245727,
+          "relative_deviation": 1.5303
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 0.9,
+        "behavior_deviation": 3.0,
+        "identity_untrust": 1.5,
+        "device_untrust": 1.5,
+        "asset_criticality": 12.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "ground_truth_label": "Normal",
+      "is_attack_ground_truth": false,
+      "classification_result": "TN",
+      "error_message": null,
+      "status": "COMPLETED"
+    },
+    {
+      "event_id": "MIX_02",
+      "source": "OT",
+      "event_type": "PLC_TELEMETRY_READ",
+      "user_id": "USR_REMOTE_ENG",
+      "device_id": "DEV_REMOTE_LAPTOP",
+      "asset_id": "PLC_PRIMARY_LOOP",
+      "scheduled_offset": 3.0,
+      "scheduled_time_iso": "00:00:03",
+      "actual_dispatch_time_iso": "2026-11-16T12:03:26.725969+00:00",
+      "completion_time_iso": "2026-11-16T12:03:26.788965+00:00",
+      "dispatch_jitter_ms": 0.0,
+      "processing_latency_ms": 62.996,
+      "detector_prediction": "NORMAL",
+      "anomaly_score": 0.455542,
+      "detection_threshold": 0.821954,
+      "is_anomaly": false,
+      "risk_score": 25.5,
+      "risk_level": "LOW",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "P1_PP04SP",
+          "observed_value": -3.9605,
+          "expected_value": -0.384,
+          "residual_error": 12.791502,
+          "relative_deviation": 9.3148
+        },
+        {
+          "feature_name": "P2_VIBTR03",
+          "observed_value": 2.3656,
+          "expected_value": 0.7785,
+          "residual_error": 2.518872,
+          "relative_deviation": 2.0385
+        },
+        {
+          "feature_name": "P1_PCV02Z",
+          "observed_value": -2.1827,
+          "expected_value": -1.2151,
+          "residual_error": 0.936072,
+          "relative_deviation": 0.7962
+        },
+        {
+          "feature_name": "P3_LIT01",
+          "observed_value": -0.354,
+          "expected_value": 0.5975,
+          "residual_error": 0.905369,
+          "relative_deviation": 1.5924
+        },
+        {
+          "feature_name": "x1001_05_SETPOINT_OUT",
+          "observed_value": -2.1476,
+          "expected_value": -1.2048,
+          "residual_error": 0.888906,
+          "relative_deviation": 0.7826
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 7.5,
+        "behavior_deviation": 3.0,
+        "identity_untrust": 1.5,
+        "device_untrust": 1.5,
+        "asset_criticality": 12.0
+      },
+      "expected_outcome": "ALLOW",
+      "outcome_matched": true,
+      "ground_truth_label": "Normal",
+      "is_attack_ground_truth": false,
+      "classification_result": "TN",
+      "error_message": null,
+      "status": "COMPLETED"
+    },
+    {
+      "event_id": "MIX_03",
+      "source": "IT",
+      "event_type": "SUSPICIOUS_PORT_PROBE",
+      "user_id": "USR_UNKNOWN",
+      "device_id": "DEV_ROGUE_VM",
+      "asset_id": "IT_ROUTER_CORE",
+      "scheduled_offset": 6.0,
+      "scheduled_time_iso": "00:00:06",
+      "actual_dispatch_time_iso": "2026-11-16T12:03:26.788998+00:00",
+      "completion_time_iso": "2026-11-16T12:03:26.853946+00:00",
+      "dispatch_jitter_ms": 0.0,
+      "processing_latency_ms": 64.942,
+      "detector_prediction": "Normal",
+      "anomaly_score": 0.002324,
+      "detection_threshold": 0.638311,
+      "is_anomaly": false,
+      "risk_score": 61.09,
+      "risk_level": "HIGH",
+      "policy_verdict": "DENY",
+      "recommended_action": "REVOKE_AND_ISOLATE (Simulated Advisory)",
+      "policy_reason": "Critical attack posture detected. The event combines abnormal behavior, high asset criticality, and weakened identity/device trust. Access must be blocked.",
+      "top_contributing_features": [
+        {
+          "feature_name": "Protocol",
+          "observed_value": 2.702,
+          "expected_value": 2.3757,
+          "residual_error": 0.10648,
+          "relative_deviation": 0.1374
+        },
+        {
+          "feature_name": "Bwd Packetss",
+          "observed_value": -0.1258,
+          "expected_value": 0.0472,
+          "residual_error": 0.029957,
+          "relative_deviation": 3.6624
+        },
+        {
+          "feature_name": "PSH Flag Count",
+          "observed_value": -0.9703,
+          "expected_value": -0.8278,
+          "residual_error": 0.020291,
+          "relative_deviation": 0.1721
+        },
+        {
+          "feature_name": "URG Flag Count",
+          "observed_value": -0.2641,
+          "expected_value": -0.4003,
+          "residual_error": 0.018572,
+          "relative_deviation": 0.3404
+        },
+        {
+          "feature_name": "Source Port",
+          "observed_value": 0.6298,
+          "expected_value": 0.5039,
+          "residual_error": 0.015856,
+          "relative_deviation": 0.2499
+        }
+      ],
+      "rule_traces": [
+        {
+          "Rule": "R2: Compromised identity and device trust",
+          "Condition": "identity_trust < 0.40 and device_trust < 0.40 and risk_score >= 60",
+          "Evaluated": "identity=0.20, device=0.15, risk=61.1",
+          "Result": "TRIGGERED"
+        },
+        {
+          "Rule": "R3: Elevated access risk",
+          "Condition": "risk_score >= 60 or identity_trust < 0.60 or device_trust < 0.60",
+          "Evaluated": "risk=61.1, identity=0.20, device=0.15",
+          "Result": "TRIGGERED"
+        }
+      ],
+      "risk_components": {
+        "anomaly_severity": 0.09,
+        "behavior_deviation": 25.5,
+        "identity_untrust": 12.0,
+        "device_untrust": 8.5,
+        "asset_criticality": 15.0
+      },
+      "expected_outcome": "REQUIRE_VERIFICATION",
+      "outcome_matched": false,
+      "ground_truth_label": "Attack",
+      "is_attack_ground_truth": true,
+      "classification_result": "FN",
+      "error_message": null,
+      "status": "COMPLETED"
+    },
+    {
+      "event_id": "MIX_04",
+      "source": "OT",
+      "event_type": "EMERGENCY_SHUTDOWN_SIGNAL",
+      "user_id": "SYS_SAFETY_INTERLOCK",
+      "device_id": "DEV_SIS_CONTROLLER",
+      "asset_id": "P2_EMERG_VALVE",
+      "scheduled_offset": 9.0,
+      "scheduled_time_iso": "00:00:09",
+      "actual_dispatch_time_iso": "2026-11-16T12:03:26.854029+00:00",
+      "completion_time_iso": "2026-11-16T12:03:26.855136+00:00",
+      "dispatch_jitter_ms": 0.0,
+      "processing_latency_ms": 1.106,
+      "detector_prediction": "NORMAL",
+      "anomaly_score": 0.571341,
+      "detection_threshold": 0.821954,
+      "is_anomaly": false,
+      "risk_score": 48.0,
+      "risk_level": "MEDIUM",
+      "policy_verdict": "ALLOW",
+      "recommended_action": "RECORD_AND_MONITOR (Simulated Advisory)",
+      "policy_reason": "Contextual risk is within acceptable bounds. Identity, device posture, and behavior indicators are consistent with trusted operations.",
+      "top_contributing_features": [
+        {
+          "feature_name": "P1_PP04SP",
+          "observed_value": -3.9605,
+          "expected_value": -0.1776,
+          "residual_error": 14.310407,
+          "relative_deviation": 21.3033
+        },
+        {
+          "feature_name": "P2_VT01",
+          "observed_value": 1.4776,
+          "expected_value": -0.3695,
+          "residual_error": 3.411834,
+          "relative_deviation": 4.9988
+        },
+        {
+          "feature_name": "P2_SCST",
+          "observed_value": -1.6121,
+          "expected_value": -0.1055,
+          "residual_error": 2.269863,
+          "relative_deviation": 14.2849
+        },
+        {
+          "feature_name": "P1_PCV02Z",
+          "observed_value": -2.1827,
+          "expected_value": -0.7908,
+          "residual_error": 1.937203,
+          "relative_deviation": 1.76
+        },
+        {
+          "feature_name": "x1001_05_SETPOINT_OUT",
+          "observed_value": -2.1476,
+          "expected_value": -0.841,
+          "residual_error": 1.707205,
+          "relative_deviation": 1.5536
+        }
+      ],
+      "rule_traces": [],
+      "risk_components": {
+        "anomaly_severity": 7.5,
+        "behavior_deviation": 21.0,
+        "identity_untrust": 0.3,
+        "device_untrust": 0.2,
+        "asset_criticality": 19.0
+      },
+      "expected_outcome": "DENY",
+      "outcome_matched": false,
+      "ground_truth_label": "Attack",
+      "is_attack_ground_truth": true,
+      "classification_result": "FN",
+      "error_message": null,
+      "status": "COMPLETED"
+    }
+  ],
+  "error_message": null
+}

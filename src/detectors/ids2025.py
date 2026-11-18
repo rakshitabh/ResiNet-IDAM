@@ -215,12 +215,14 @@ class Ids2025Detector:
 
         # Compute unsupervised Autoencoder anomaly score if available
         top_features = []
+        ae_decision = False
+        ae_score = 0.0
         if self._ae is not None and vector.shape[1] == 79:
             recon = self._ae.predict(vector)
             reconstruction_error = float(np.mean((vector - recon) ** 2))
             threshold = self._ae_threshold
-            anomaly_decision = reconstruction_error > threshold
-            anomaly_score = min(1.0, max(0.0, reconstruction_error / max(3.0 * threshold, 1e-6)))
+            ae_decision = bool(reconstruction_error > threshold)
+            ae_score = min(1.0, max(0.0, reconstruction_error / max(3.0 * threshold, 1e-6)))
 
             vec_arr = np.asarray(vector).flatten()
             recon_arr = np.asarray(recon).flatten()
@@ -238,8 +240,6 @@ class Ids2025Detector:
             ]
         else:
             reconstruction_error = 1.0 - confidence if confidence is not None else 0.0
-            anomaly_decision = prediction.lower() not in {"normal", "benign"}
-            anomaly_score = float(anomaly_decision)
             threshold = 0.5
             if hasattr(model, "feature_importances_"):
                 top_imp = self.top_features(config_key=config_key, top_n=5)
@@ -253,6 +253,24 @@ class Ids2025Detector:
                     }
                     for feat, imp in top_imp
                 ]
+
+        # Multi-model detection logic: supervised RF prediction + unsupervised AE
+        is_attack_pred = prediction.lower() not in {"normal", "benign"}
+        prob_attack = 0.0
+        if probabilities is not None:
+            normal_idx = 4 if len(probabilities) > 4 else None
+            if normal_idx is not None and normal_idx < len(probabilities):
+                prob_attack = float(1.0 - probabilities[normal_idx])
+            else:
+                prob_attack = float(confidence) if is_attack_pred else 0.0
+
+        anomaly_decision = ae_decision or is_attack_pred or (prob_attack >= 0.50)
+        if is_attack_pred or prob_attack >= 0.50:
+            anomaly_score = max(ae_score, prob_attack)
+        elif self._ae is not None:
+            anomaly_score = ae_score
+        else:
+            anomaly_score = float(anomaly_decision)
 
         return DetectionResult(
             source="IT",

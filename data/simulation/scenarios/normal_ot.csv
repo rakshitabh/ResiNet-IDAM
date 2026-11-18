@@ -1,0 +1,5 @@
+event_id,offset_seconds,source,event_type,user_id,device_id,asset_id,ip_address,mac_address,telemetry_record_id,identity_trust,device_trust,asset_criticality,behavior_deviation,expected_outcome
+OT_NORM_01,1.0,OT,POLL_PRESSURE,USR_OP_01,DEV_HMI_01,PLC_PRIMARY_LOOP,192.168.1.20,00:1A:2B:EE:01:01,0,0.95,0.95,0.40,0.05,ALLOW
+OT_NORM_02,3.0,OT,POLL_TEMPERATURE,USR_OP_01,DEV_HMI_01,PLC_PRIMARY_LOOP,192.168.1.20,00:1A:2B:EE:01:01,1,0.95,0.95,0.40,0.05,ALLOW
+OT_NORM_03,5.0,OT,READ_VALVE_STATUS,USR_OP_02,DEV_HMI_02,PLC_SECONDARY_LOOP,192.168.1.22,00:1A:2B:EE:01:02,2,0.95,0.95,0.50,0.08,ALLOW
+

@@ -1,0 +1,361 @@
+ResiNet-IDAM – Implementation Plan
+Phase 1: Establish the existing baseline
+Before changing code:
+Run the current simulation and save screenshots/logs as a baseline.
+
+Deliverable: A verified baseline that we can compare against after implementation.
+Phase 2: Build the dataset and experiment pipeline
+This is the most important research improvement. The dashboard must not simply load a CSV and call every file a zero-day scenario.
+2.1 Create an experiment configuration
+Each experiment should define:
+Field	Example
+Experiment ID	LOCO-04
+Domain	IT / OT / IT+OT
+Dataset	IDS2025 / HAI
+Held-out attack	Botnet ARES
+Detector	Existing RF / AE
+Threshold policy	Frozen normal-validation threshold
+Random seed	42
+Run status	READY / RUNNING / COMPLETED
+
+2.2 Implement leakage-safe dataset splitting
+Use three logically separate datasets:
+Training
+Normal + known attack classes
+
+Train the existing supervised Random Forest using the known classes. Train the existing autoencoder using only approved normal samples.
+
+
+Calibration
+Normal-only validation samples
+
+Determine the anomaly threshold using normal validation data. Freeze the threshold before evaluation.
+
+
+Testing
+Normal + known attacks + held-out attack class
+
+Run predictions without exposing the ground-truth labels to the detector.
+
+
+For Leave-One-Class-Out (LOCO), repeat the experiment for each eligible attack class. A held-out class must be excluded from training, preprocessing decisions that use labels, and threshold calibration.
+2.3 Resolve the existing HAI data issue first
+The repository's dataset report identifies two reproducibility blockers:
+- The original HAI source-file lineage is not independently verified.
+- models/standard_scaler.joblib is missing.
+Restore or regenerate the scaler from a verified training-only pipeline, preserve the original dataset source and checksums, and verify the 66-feature order before claiming reproducible OT results.
+
+Deliverable: A repeatable experiment pipeline that can produce a train/calibration/test manifest for every run.
+Phase 3: Implement the research evaluation engine
+Create a separate evaluation layer. It should not be mixed into the detector itself.
+
+Suggested modules:
+src/
+├── evaluation/
+│   ├── dataset_splitter.py
+│   ├── experiment_config.py
+│   ├── loco_runner.py
+│   ├── threshold_calibrator.py
+│   ├── prediction_evaluator.py
+│   ├── metrics.py
+│   └── evaluation_report.py
+
+
+Responsibilities:
+Module	Responsibility
+dataset_splitter.py	Create leakage-safe splits
+experiment_config.py	Store experiment settings
+loco_runner.py	Execute held-out-class experiments
+threshold_calibrator.py	Calibrate and freeze thresholds
+prediction_evaluator.py	Compare predictions against hidden labels
+metrics.py	Calculate metrics
+evaluation_report.py	Export experiment results
+
+3.1 Required evaluation metrics
+Calculate:
+- True Positive (TP)
+- False Positive (FP)
+- True Negative (TN)
+- False Negative (FN)
+- Precision
+- Recall
+- F1-score
+- False Positive Rate (FPR)
+- False Negative Rate (FNR)
+- Accuracy
+- Per-class recall
+For HAI, also consider attack-episode-level recall and detection delay, since row-level metrics alone may hide the operational impact of missed attack intervals.
+
+Critical rule: Never use test-set labels to select thresholds or change model parameters.
+Phase 4: Build the simulation controller
+This phase implements the buttons in the dashboard image.
+
+Create:
+src/
+└── simulation/
+    ├── controller.py
+    ├── state.py
+    ├── scheduler.py
+    ├── event_processor.py
+    └── run_store.py
+
+
+4.1 Simulation state machine
+Use these states:
+READY
+
+Configured / idle
+
+
+RUNNING
+
+Processing events
+
+
+PAUSED
+
+Clock frozen
+
+
+STOPPED
+
+Run terminated
+
+
+
+RESTART creates a new run and returns the controller to READY. It must not erase the archived run.
+
+Action	Allowed starting state	Result
+Start	READY	RUNNING
+Pause	RUNNING	PAUSED
+Resume	PAUSED	RUNNING
+Stop	RUNNING / PAUSED	STOPPED
+Restart	Any state	Archive old run, create new READY run
+
+4.2 Define button functions
+Each button should call a controller method rather than containing its own simulation logic.
+controller.start()controller.pause()controller.resume()controller.stop()controller.restart()controller.set_speed(2)
+
+
+
+The controller is responsible for validating state transitions, maintaining the simulation clock and updating the run record.
+4.3 Event scheduler
+The scheduler should:
+1. Read the next eligible event from the selected dataset.
+2. Respect the configured playback speed.
+3. Dispatch events only when the state is RUNNING.
+4. Track the current event index.
+5. Stop dispatching when the dataset is exhausted.
+6. Preserve the current position when paused.
+7. Save the last processed position when stopped.
+Use a configurable batch size so a large dataset does not freeze the Streamlit interface.
+
+Important Streamlit consideration: Streamlit reruns the application when controls are clicked. Store controller state in st.session_state and persist run metadata separately. Avoid starting uncontrolled background threads from button callbacks.
+Phase 5: Connect the existing detection and Zero-Trust modules
+We already have a useful foundation in the repository:
+Existing component	Current responsibility	Integration
+Ids2025Detector	IT network-flow detection	Reuse
+HaiAutoencoderDetector	OT anomaly detection	Reuse
+DetectionService	Detection orchestration and event creation	Extend carefully
+risk_engine.py	Five-factor risk scoring	Reuse
+EventStore	SQLite event persistence	Extend for run association
+
+5.1 Implement the event-processing pipeline
+For each scheduled event:
+CSV row
+  ↓
+Feature validation and mapping
+  ↓
+Detector selection (IT / OT)
+  ↓
+Prediction and anomaly score
+  ↓
+DetectionService
+  ↓
+Zero-Trust policy evaluation
+  ↓
+Save event with run_id
+  ↓
+Evaluation engine compares hidden label
+  ↓
+Update dashboard
+
+
+There are two important integration details:
+
+First: Ground-truth isolation.
+
+The existing detection workspace in src/ui/views.py currently displays ground-truth labels during individual row inspection. The new research simulation must not follow that pattern. The event processor should extract labels into a separate evaluation record and pass only timestamp, features and permitted context to the detector.
+
+Second: Zero-Trust policy evaluation.
+
+DetectionService.detect() currently calculates risk and stores the event. It does not itself invoke evaluate_zero_trust_decision(). The new simulation orchestration should explicitly invoke that existing evaluator after detection and associate its verdict and rule traces with the event. Keep this advisory: the existing implementation sets is_automatic_action=False.
+5.2 Extend event storage safely
+Do not delete or recreate the existing SQLite database.
+
+Add a migration for new research fields or separate research tables.
+
+Suggested tables:
+Table	Purpose
+simulation_runs	Run ID, configuration, state, start/end times
+simulation_events	Run ID, event ID, sequence number, processing status
+evaluation_results	Ground truth, prediction and TP/FP/TN/FN
+experiment_metrics	Aggregate and per-class metrics
+
+Link existing event records using run_id where appropriate. Keep existing alert records and review history intact.
+
+For a research experiment, store both the model prediction and the ground-truth class in the evaluation layer, not in the detector's input or feature payload.
+Phase 6: Implement the dashboard in Streamlit
+Your existing application already uses app.py and src/ui/views.py. We should extend this structure rather than introduce a second dashboard framework.
+
+Suggested additions:
+src/ui/
+├── views.py
+└── components/
+    ├── simulation_controls.py
+    ├── experiment_selector.py
+    ├── metrics_panel.py
+    ├── confusion_matrix.py
+    ├── event_timeline.py
+    ├── risk_policy_panel.py
+    └── experiment_history.py
+
+
+Add a new Simulation & Evaluation workspace to the sidebar.
+Dashboard section mapping
+Dashboard section	Required functionality
+Experiment selector	Select LOCO experiment, dataset, domain and held-out class
+Simulation controls	Start, Pause, Resume, Stop, Restart and speed
+Simulation progress	Current time, event count and completion percentage
+Metric cards	Precision, Recall, F1, FPR and confusion counts
+Confusion matrix	Actual vs predicted
+Per-class recall	Detection performance for each attack class
+Anomaly distribution	Normal and attack score distributions
+Event timeline	Live detection, risk and policy information
+Model status	RF, IT AE, HAI AE and Zero-Trust availability
+Experiment history	Previously completed runs and comparisons
+
+Recommended navigation:
+- Operations Overview – existing.
+- Detection Workspace – existing.
+- Simulation & Evaluation – new.
+- Alert Management – existing.
+- Risk Assessment – existing.
+- Model & Data Health – existing.
+- Experiment History – new, or a section inside Simulation & Evaluation.
+Do not remove the existing screens while introducing the new workspace.
+Phase 7: Implement reporting and experiment history
+Every completed experiment should produce a reproducible report.
+
+A report should contain:
+1. Experiment ID and held-out attack class.
+2. Dataset source and version.
+3. Dataset split details and sample counts.
+4. Model name and configuration.
+5. Feature schema and preprocessing information.
+6. Calibration method and frozen threshold.
+7. Confusion matrix.
+8. Precision, Recall, F1, FPR and FNR.
+9. Per-class performance.
+10. Detection delay, where measurable.
+11. Limitations and experiment observations.
+Recommended output:
+reports/
+└── experiments/
+    └── LOCO-04/
+        ├── config.json
+        ├── split_manifest.json
+        ├── predictions.csv
+        ├── metrics.json
+        ├── confusion_matrix.png
+        └── evaluation_report.html
+
+
+Also include model, scaler, dataset and configuration hashes so another team member can reproduce the run.
+Phase 8: Testing and verification
+Do not wait until the entire dashboard is finished to test it.
+Test category	What to verify
+Dataset tests	Correct feature order, missing values, invalid rows
+Leakage tests	No labels reach detector input
+Model tests	Existing IT and OT detectors still work
+Threshold tests	Threshold uses normal validation only
+Controller tests	Valid and invalid state transitions
+Scheduler tests	Pause, resume, stop and speed
+Evaluation tests	Correct TP, FP, TN, FN and metrics
+Zero-Trust tests	Correct risk score and policy verdict
+Database tests	Existing records remain unaffected
+UI tests	Button state, progress and metric updates
+Reproducibility tests	Same configuration produces repeatable results
+
+Essential button acceptance tests
+- Start from READY → RUNNING.
+- Start from RUNNING → rejected.
+- Pause from RUNNING → PAUSED.
+- Pause from READY → rejected.
+- Resume from PAUSED → RUNNING.
+- Stop from RUNNING → STOPPED.
+- Restart after STOPPED → new run ID and READY.
+- Change speed → scheduling interval changes without changing predictions.
+- Complete dataset → run becomes COMPLETED automatically.
+
+Recommended development order for your team
+I would divide the work into six deliverable milestones rather than asking everyone to build the dashboard simultaneously.
+1. Milestone 1 – Baseline and dataset audit
+   Foundation
+   Verify current models, dataset lineage, scaler and feature schemas.
+   
+   Deliverable: Verified baseline and dataset manifest.
+2. Milestone 2 – Research evaluation pipeline
+   
+   Implement splitting, LOCO execution, threshold calibration and metric calculation.
+   
+   Deliverable: One reproducible LOCO experiment running without label leakage.
+3. Milestone 3 – Simulation controller
+   
+   Implement the state machine, scheduler, event processing and run persistence.
+   
+   Deliverable: Start/Pause/Resume/Stop/Restart working independently of the dashboard.
+4. Milestone 4 – Detection and Zero-Trust integration
+   
+   Connect existing IT/OT detectors, DetectionService and policy evaluator.
+   
+   Deliverable: Complete event-processing pipeline.
+5. Milestone 5 – Dashboard and reporting
+   
+   Implement the proposed UI, metrics, event timeline and experiment history.
+   
+   Deliverable: Functional Streamlit research dashboard.
+6. Milestone 6 – Verification and final demonstration
+   
+   Run all tests, compare with the baseline and prepare reproducible experiment reports.
+   
+   Deliverable: Verified project demonstration.
+
+9. How I would divide the work among four team members
+Member	Primary ownership	Deliverable
+Member 1	Dataset audit, splitting and LOCO pipeline	Research-ready datasets
+Member 2	Simulation controller and event scheduler	Working simulation controls
+Member 3	Detection, Zero-Trust and persistence integration	End-to-end backend
+Member 4	Streamlit dashboard and reporting	Complete UI and reports
+
+Everyone should contribute tests for their own modules. One person should own integration and approve changes to shared interfaces.
+10. Final experiment plan
+Once the implementation is stable, execute these experiments:
+Experiment	Objective
+E1 – IT baseline	Evaluate existing IDS2025 RF and available IT AE
+E2 – OT baseline	Evaluate HAI Autoencoder
+E3 – Known attacks	Measure performance on known classes
+E4 – LOCO evaluation	Evaluate each eligible held-out attack class
+E5 – IT + OT correlation	Evaluate the combined monitoring workflow
+E6 – Zero-Trust evaluation	Analyze contextual risk and policy decisions
+E7 – Ablation study	Compare relevant detector configurations
+E8 – Robustness	Test feature shifts, missing data and performance under different workloads
+
+Keep IT and OT detection results separate before reporting combined results. Since the datasets originate from separate testbeds, any cross-domain correlation must be described as simulated rather than real synchronized telemetry.
+
+11. Important decisions to finalize before coding
+There are three technical decisions I would not leave ambiguous:
+1. IT novelty detection: The IT Autoencoder inference path is optional and requires its 79-feature artifact. The 77-feature configuration does not automatically provide an independent AE novelty detector; verify availability before designing the IT experiment.
+2. HAI reproducibility: Resolve the missing scaler and training-source provenance before retraining or claiming new final metrics.
+3. Dashboard metrics: Display metrics from the current experiment run, not aggregate historical SQLite alerts. Never mix old alerts with current experiment TP/FP/TN/FN.
+Also, describe LOCO as unseen attack-class generalization or zero-day-like evaluation, not proof of real-world zero-day detection.
