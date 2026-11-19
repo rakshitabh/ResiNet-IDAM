@@ -15,6 +15,8 @@ from scipy import stats
 import streamlit as st
 
 from src.application.detection_service import DetectionService
+from src.evaluation.experiment_config import STANDARD_EXPERIMENTS
+from src.evaluation.loco_runner import LocoExperimentRunner
 from src.simulation.data.csv_parser import SimulationCsvParser
 from src.simulation.engine.controller import SimulationController
 from src.simulation.models.simulation_event import EventState
@@ -261,48 +263,43 @@ def render_simulation_view(service: DetectionService) -> None:
 
     st.write("")
 
-    # Research Metrics Banner (from image)
-    # Precision, Recall, F1-Score, FPR + TP, FP, FN, TN
+    # Research Metrics Banner
+    # Precision, Recall, F1-Score, FPR + TP, FP, FN, TN (Phase 8: no fake hardcoded numbers when not evaluated)
     has_results = bool(run and run.processed_events > 0)
-    run_prec = run.precision if has_results else preset_info.get("baseline_prec", 0.96)
-    run_rec = run.recall if has_results else preset_info.get("baseline_rec", 0.93)
-    run_f1 = run.f1_score if has_results else preset_info.get("baseline_f1", 0.94)
-    run_fpr = run.fpr if has_results else preset_info.get("baseline_fpr", 0.02)
-    mode_label = "Live Evaluation" if has_results else "Benchmark Baseline"
+    
+    prec_str = f"{run.precision:.2f}" if has_results else "—"
+    rec_str = f"{run.recall:.2f}" if has_results else "—"
+    f1_str = f"{run.f1_score:.2f}" if has_results else "—"
+    fpr_str = f"{run.fpr:.2f}" if has_results else "—"
+    mode_label = "Live Evaluated" if has_results else "Awaiting Run"
 
     kpi1, kpi2, kpi3, kpi4, kpi_counts = st.columns([1.2, 1.2, 1.2, 1.2, 3.2])
     with kpi1:
         st.markdown(
-            f'<div class="metric-banner-card"><div class="metric-label">🎯 Precision</div><div class="metric-num" style="color:#10b981;">{run_prec:.2f}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
+            f'<div class="metric-banner-card"><div class="metric-label">🎯 Precision</div><div class="metric-num" style="color:#10b981;">{prec_str}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
             unsafe_allow_html=True,
         )
     with kpi2:
         st.markdown(
-            f'<div class="metric-banner-card"><div class="metric-label">📊 Recall</div><div class="metric-num" style="color:#38bdf8;">{run_rec:.2f}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
+            f'<div class="metric-banner-card"><div class="metric-label">📊 Recall</div><div class="metric-num" style="color:#38bdf8;">{rec_str}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
             unsafe_allow_html=True,
         )
     with kpi3:
         st.markdown(
-            f'<div class="metric-banner-card"><div class="metric-label">💎 F1-Score</div><div class="metric-num" style="color:#c084fc;">{run_f1:.2f}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
+            f'<div class="metric-banner-card"><div class="metric-label">💎 F1-Score</div><div class="metric-num" style="color:#c084fc;">{f1_str}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
             unsafe_allow_html=True,
         )
     with kpi4:
         st.markdown(
-            f'<div class="metric-banner-card"><div class="metric-label">⚠️ FPR</div><div class="metric-num" style="color:#f87171;">{run_fpr:.2f}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
+            f'<div class="metric-banner-card"><div class="metric-label">⚠️ FPR</div><div class="metric-num" style="color:#f87171;">{fpr_str}</div><div style="font-size:0.65rem; color:#64748b;">{mode_label}</div></div>',
             unsafe_allow_html=True,
         )
     with kpi_counts:
         # TP, FP, FN, TN mini cards
-        if has_results:
-            c_tp = run.tp
-            c_fp = run.fp
-            c_fn = run.fn
-            c_tn = run.tn
-        else:
-            c_tp = 472
-            c_fp = 18
-            c_fn = 28
-            c_tn = 948
+        c_tp = run.tp if has_results else 0
+        c_fp = run.fp if has_results else 0
+        c_fn = run.fn if has_results else 0
+        c_tn = run.tn if has_results else 0
         box_tp, box_fp, box_fn, box_tn = st.columns(4)
         with box_tp:
             st.markdown(f'<div class="confusion-mini"><div style="font-size:0.75rem; color:#34d399; font-weight:700;">TP</div><div style="font-size:1.4rem; font-weight:800; color:#34d399;">{c_tp}</div></div>', unsafe_allow_html=True)
@@ -352,7 +349,7 @@ def render_simulation_view(service: DetectionService) -> None:
         elif has_results and run.results:
             per_class = {"Unseen Attacks": run.recall}
         else:
-            per_class = preset_info.get("classes", {"Botnet ARES (held-out)": 0.93, "Infiltration (held-out)": 0.88})
+            per_class = {f"{selected_exp.split(':')[1].strip() if ':' in selected_exp else selected_exp}": 0.0}
 
         class_names = list(per_class.keys())
         class_recalls = list(per_class.values())
@@ -362,7 +359,7 @@ def render_simulation_view(service: DetectionService) -> None:
             y=class_names,
             orientation="h",
             marker=dict(color="#10b981"),
-            text=[f"{r:.2f}" for r in class_recalls],
+            text=[f"{r:.2f}" if has_results else "Pending" for r in class_recalls],
             textposition="auto",
         ))
         fig_pc.update_layout(
@@ -377,12 +374,11 @@ def render_simulation_view(service: DetectionService) -> None:
 
     with m_col3:
         st.markdown("##### 📈 Anomaly Score Distribution")
-        # Anomaly density plot (Normal vs Unseen Attack)
-        norm_scores = run.anomaly_scores_normal if (has_results and run.anomaly_scores_normal) else None
-        atk_scores = run.anomaly_scores_attack if (has_results and run.anomaly_scores_attack) else None
+        norm_scores = run.anomaly_scores_normal if (has_results and run.anomaly_scores_normal) else []
+        atk_scores = run.anomaly_scores_attack if (has_results and run.anomaly_scores_attack) else []
 
         fig_dist = go.Figure()
-        if norm_scores is not None and len(norm_scores) > 0:
+        if norm_scores:
             fig_dist.add_trace(go.Histogram(
                 x=norm_scores,
                 name="Normal",
@@ -390,42 +386,22 @@ def render_simulation_view(service: DetectionService) -> None:
                 marker_color="#0284c7",
                 histnorm="probability density",
             ))
-        else:
-            # Baseline benchmark density distribution
-            np.random.seed(42)
-            synth_norm = np.clip(np.random.normal(0.22, 0.08, 120), 0.02, 0.45)
+        if atk_scores:
             fig_dist.add_trace(go.Histogram(
-                x=synth_norm,
-                name="Normal (Baseline)",
+                x=atk_scores,
+                name="Unseen Attack",
                 opacity=0.6,
-                marker_color="#0284c7",
+                marker_color="#ef4444",
                 histnorm="probability density",
             ))
 
-        if atk_scores is not None and len(atk_scores) > 0:
-            fig_dist.add_trace(go.Histogram(
-                x=atk_scores,
-                name="Unseen Attack",
-                opacity=0.6,
-                marker_color="#ef4444",
-                histnorm="probability density",
-            ))
-        else:
-            synth_atk = np.clip(np.random.normal(0.78, 0.09, 120), 0.52, 0.98)
-            fig_dist.add_trace(go.Histogram(
-                x=synth_atk,
-                name="Unseen Attack (Baseline)",
-                opacity=0.6,
-                marker_color="#ef4444",
-                histnorm="probability density",
-            ))
-            fig_dist.add_trace(go.Histogram(
-                x=atk_scores,
-                name="Unseen Attack",
-                opacity=0.6,
-                marker_color="#ef4444",
-                histnorm="probability density",
-            ))
+        if not norm_scores and not atk_scores:
+            fig_dist.add_annotation(
+                text="Awaiting simulation execution<br>to plot score distribution",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=12, color="#64748b"),
+            )
 
         # Add vertical threshold line
         fig_dist.add_vline(x=0.50, line_dash="dash", line_color="#f59e0b", annotation_text="Threshold", annotation_position="top right")
@@ -446,12 +422,13 @@ def render_simulation_view(service: DetectionService) -> None:
     st.divider()
 
     # Lower Section: Multi-Tab Investigation (from image)
-    tab_timeline, tab_details, tab_risk, tab_classes, tab_calib, tab_logs = st.tabs([
+    tab_timeline, tab_details, tab_risk, tab_classes, tab_calib, tab_loco_bench, tab_logs = st.tabs([
         "Live Event Timeline",
         "Detection Details",
         "Risk & Zero-Trust Policy",
         "Metrics by Class",
         "Threshold & Calibration",
+        "🔬 Mode B: Research LOCO Benchmark",
         "Execution Logs",
     ])
 
@@ -535,6 +512,76 @@ def render_simulation_view(service: DetectionService) -> None:
             - **Sigmoid Probability Calibration**: Platt scaling centered on decision boundary $0.50$.
             """
         )
+
+    with tab_loco_bench:
+        st.markdown("##### 🔬 Mode B: Research Evaluation & Leave-One-Class-Out (LOCO) Benchmark")
+        st.markdown(
+            "Execute reproducible LOCO experiments on empirical test data with **complete ground-truth isolation** (Phase 4). "
+            "Detectors receive only input feature vectors; evaluation metrics are calculated post-inference."
+        )
+
+        b_c1, b_c2, b_c3 = st.columns([2.5, 1.5, 1.2])
+        with b_c1:
+            loco_exp_choice = st.selectbox(
+                "Select LOCO Experiment",
+                list(STANDARD_EXPERIMENTS.keys()),
+                index=0,
+                key="loco_exp_select",
+            )
+        with b_c2:
+            test_sample_limit = st.selectbox(
+                "Test Sample Budget",
+                [50, 100, 200, 500, "Full Partition"],
+                index=1,
+                key="loco_sample_budget",
+            )
+        with b_c3:
+            st.write("")
+            st.write("")
+            run_loco_btn = st.button("⚡ Execute LOCO", use_container_width=True, key="run_loco_btn")
+
+        selected_cfg = STANDARD_EXPERIMENTS[loco_exp_choice]
+        st.caption(f"**Description:** {selected_cfg.description} | **Threshold Policy:** {selected_cfg.threshold_policy}")
+
+        if run_loco_btn:
+            limit_val = None if test_sample_limit == "Full Partition" else int(test_sample_limit)
+            with st.spinner(f"Running {loco_exp_choice} with ground-truth isolation..."):
+                try:
+                    runner = LocoExperimentRunner(service.root, service=service)
+                    loco_res = runner.run_experiment(selected_cfg, max_test_samples=limit_val)
+                    st.session_state["last_loco_result"] = loco_res
+                    st.success(f"Successfully executed {loco_exp_choice}!")
+                except Exception as ex:
+                    st.error(f"Execution Error: {ex}")
+
+        if "last_loco_result" in st.session_state:
+            res_obj = st.session_state["last_loco_result"]
+            metrics = res_obj["results"]["metrics"]
+            prov = res_obj["provenance"]
+
+            st.write("")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("🎯 Precision", f"{metrics['precision']:.4f}" if metrics['precision'] is not None else "N/A")
+            m2.metric("📊 Recall", f"{metrics['recall']:.4f}" if metrics['recall'] is not None else "N/A")
+            m3.metric("💎 F1-Score", f"{metrics['f1_score']:.4f}" if metrics['f1_score'] is not None else "N/A")
+            m4.metric("⚠️ FPR", f"{metrics['fpr']:.4f}" if metrics['fpr'] is not None else "N/A")
+
+            # Per-class recall table
+            st.markdown("**Attack Recall by Class:**")
+            st.table(pd.DataFrame([
+                {"Attack Class": k, "Recall": f"{v*100:.1f}%"}
+                for k, v in res_obj["results"]["per_class_recall"].items()
+            ]))
+
+            # Provenance hashes
+            st.markdown("**Cryptographic Audit & Provenance:**")
+            st.code(
+                f"Dataset Hash (SHA-256): {prov.get('dataset_hash')}\n"
+                f"Manifest Hash (SHA-256): {prov.get('manifest_hash')}\n"
+                f"Model Hash (SHA-256): {prov.get('model_hash')}\n"
+                f"Feature Schema: {prov.get('feature_schema_version')} | Random Seed: {prov.get('random_seed')}",
+                language="yaml",
+            )
 
     with tab_logs:
         st.markdown("##### Audit Log & Verification Trace")

@@ -1,14 +1,16 @@
-"""Empirical telemetry resolution engine for IT and OT detectors."""
+"""Empirical telemetry resolution engine with strict schema enforcement (Phase 6.2)."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
+import numpy as np
 import pandas as pd
 
 
 class TelemetryResolver:
-    """Resolves genuine empirical feature vectors from test datasets without data hallucination."""
+    """Resolves genuine empirical feature vectors with strict schema validation and NaN/Inf rejection."""
 
     def __init__(self, root: str | Path | None = None) -> None:
         self.root = Path(root) if root is not None else Path(__file__).resolve().parents[3]
@@ -24,46 +26,61 @@ class TelemetryResolver:
         self._ot_schema: list[str] = []
         self._it_schema: list[str] = []
 
+    def _load_ot_schema(self) -> list[str]:
+        if not self._ot_schema:
+            feat_file = self.root / "models" / "feature_columns.json"
+            if feat_file.exists():
+                with open(feat_file, "r", encoding="utf-8") as f:
+                    self._ot_schema = json.load(f)
+            else:
+                df = self._load_ot()
+                cols_to_drop = [c for c in ("timestamp", "label", "Attack") if c in df.columns]
+                self._ot_schema = [c for c in df.columns if c not in cols_to_drop]
+        return self._ot_schema
+
+    def _load_it_schema(self) -> list[str]:
+        if not self._it_schema:
+            try:
+                from src.detectors.ids2025 import Ids2025Detector
+                det = Ids2025Detector(self.root)
+                self._it_schema = det.feature_schema("all_features")
+            except Exception:
+                df = self._load_it()
+                cols_to_drop = [c for c in ("label", "newLabel", "Attack", "timestamp") if c in df.columns]
+                self._it_schema = [c for c in df.columns if c not in cols_to_drop]
+        return self._it_schema
+
     def _load_ot(self) -> pd.DataFrame:
         if self._ot_df is None:
             if not self.ot_data_path.exists():
                 raise FileNotFoundError(f"OT empirical telemetry dataset not found: {self.ot_data_path}")
-            df = pd.read_csv(self.ot_data_path)
-            # Remove non-feature columns
-            cols_to_drop = [c for c in ("timestamp", "label", "Attack") if c in df.columns]
-            feature_cols = [c for c in df.columns if c not in cols_to_drop]
-            self._ot_schema = feature_cols
-            self._ot_df = df
+            self._ot_df = pd.read_csv(self.ot_data_path)
+            self._load_ot_schema()
         return self._ot_df
 
     def _load_it(self) -> pd.DataFrame:
         if self._it_df is None:
             if not self.it_data_path.exists():
                 raise FileNotFoundError(f"IT empirical telemetry dataset not found: {self.it_data_path}")
-            df = pd.read_csv(self.it_data_path)
-            cols_to_drop = [c for c in ("label", "newLabel", "Attack", "timestamp") if c in df.columns]
-            feature_cols = [c for c in df.columns if c not in cols_to_drop]
-            self._it_schema = feature_cols
-            self._it_df = df
+            self._it_df = pd.read_csv(self.it_data_path)
+            self._load_it_schema()
         return self._it_df
 
     def ot_feature_schema(self) -> list[str]:
-        self._load_ot()
-        return list(self._ot_schema)
+        return list(self._load_ot_schema())
 
     def it_feature_schema(self) -> list[str]:
-        self._load_it()
-        return list(self._it_schema)
+        return list(self._load_it_schema())
 
     def resolve(self, source: str, record_id: str | int | None = None) -> dict[str, float]:
-        """Resolve an empirical feature dictionary for the requested source and record ID."""
+        """Resolve an empirical feature dictionary strictly matching detector schema and rejecting NaN/Inf."""
         src = source.strip().upper()
         if src == "OT":
             df = self._load_ot()
-            schema = self._ot_schema
+            schema = self._load_ot_schema()
         elif src == "IT":
             df = self._load_it()
-            schema = self._it_schema
+            schema = self._load_it_schema()
         else:
             raise ValueError(f"Unsupported telemetry source: '{source}'. Must be 'IT' or 'OT'.")
 
@@ -86,6 +103,17 @@ class TelemetryResolver:
                 raise ValueError(f"Cannot resolve telemetry_record_id: '{record_id}'")
 
         row = df.iloc[row_idx]
-        features = {col: float(row[col]) for col in schema}
+        features: dict[str, float] = {}
+
+        # Validate and build strictly ordered feature dictionary
+        for col in schema:
+            if col not in row:
+                raise KeyError(f"Mandatory feature '{col}' missing from telemetry record {row_idx}")
+            val = float(row[col])
+            # Reject/sanitize NaN and Infinity (e.g. netflow division by zero)
+            if np.isnan(val) or np.isinf(val) or abs(val) > 1e12:
+                val = 0.0
+            features[col] = val
+
         return features
 

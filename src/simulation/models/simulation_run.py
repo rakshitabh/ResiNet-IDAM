@@ -78,18 +78,19 @@ class SimulationRun:
             self.fp = len([r for r in completed if r.classification_result == "FP"])
             self.fn = len([r for r in completed if r.classification_result == "FN"])
             self.tn = len([r for r in completed if r.classification_result == "TN"])
+            unavailable = len([r for r in completed if r.classification_result == "UNAVAILABLE"])
 
-            metrics = calculate_classification_metrics(self.tp, self.fp, self.fn, self.tn)
-            self.precision = metrics["precision"]
-            self.recall = metrics["recall"]
-            self.f1_score = metrics["f1_score"]
-            self.fpr = metrics["fpr"]
-            self.accuracy = metrics["accuracy"]
+            metrics = calculate_classification_metrics(self.tp, self.fp, self.fn, self.tn, unavailable=unavailable)
+            self.precision = metrics["precision"] if metrics["precision"] is not None else 0.0
+            self.recall = metrics["recall"] if metrics["recall"] is not None else 0.0
+            self.f1_score = metrics["f1_score"] if metrics["f1_score"] is not None else 0.0
+            self.fpr = metrics["fpr"] if metrics["fpr"] is not None else 0.0
+            self.accuracy = metrics["accuracy"] if metrics["accuracy"] is not None else 0.0
 
             # Per-class recall
             class_breakdown: dict[str, dict[str, int]] = {}
             for r in completed:
-                if r.is_attack_ground_truth:
+                if r.is_attack_ground_truth is True:
                     cname = r.ground_truth_label or "Attack"
                     if cname not in class_breakdown:
                         class_breakdown[cname] = {"tp": 0, "fn": 0}
@@ -100,8 +101,8 @@ class SimulationRun:
             self.per_class_recall = calculate_per_class_recall(class_breakdown)
 
             # Anomaly scores
-            self.anomaly_scores_normal = [r.anomaly_score for r in completed if not r.is_attack_ground_truth]
-            self.anomaly_scores_attack = [r.anomaly_score for r in completed if r.is_attack_ground_truth]
+            self.anomaly_scores_normal = [r.anomaly_score for r in completed if r.is_attack_ground_truth is False]
+            self.anomaly_scores_attack = [r.anomaly_score for r in completed if r.is_attack_ground_truth is True]
 
     def to_dict(self) -> dict[str, Any]:
         self.update_metrics()

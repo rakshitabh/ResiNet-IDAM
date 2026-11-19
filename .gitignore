@@ -36,6 +36,11 @@ models/it_realistic/*
 # Generated reports and local databases
 reports/it/
 data/reports/
+data/simulation/runs/
+data/simulation/uploads/
+data/evaluation/reports/
+data/evaluation/manifests/
+data/evaluation/predictions/
 data/*.sqlite3
 *.db
 *.log

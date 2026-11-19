@@ -35,9 +35,9 @@ class SimulationEventResult:
     risk_components: dict[str, float] = field(default_factory=dict)
     expected_outcome: str | None = None
     outcome_matched: bool | None = None
-    ground_truth_label: str = "Normal"
-    is_attack_ground_truth: bool = False
-    classification_result: str = "TN"
+    ground_truth_label: str | None = None
+    is_attack_ground_truth: bool | None = None
+    classification_result: str = "UNAVAILABLE"
     error_message: str | None = None
     status: str = "COMPLETED"
 
