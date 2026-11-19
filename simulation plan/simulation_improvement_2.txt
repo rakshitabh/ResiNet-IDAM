@@ -1,0 +1,831 @@
+ResiNet-IDAM – Complete improvement plan2
+Important separation: Training, calibration and testing belong to the research evaluation pipeline. The CSV simulation engine in PR #7 is an event playback and demonstration mechanism. They should integrate, but they should not be treated as the same experiment.
+
+Phase 1 – Audit and protect the existing implementation
+Goal: Establish a stable baseline before modifying anything.
+1.1 Audit existing components
+Retain and inspect:
+Existing component	Responsibility
+src/detectors/ids2025.py	Existing IT Random Forest and optional IT AE path
+src/detectors/hai_autoencoder.py	Existing OT HAI Autoencoder
+src/application/detection_service.py	Detector orchestration and event creation
+src/zero_trust/risk_engine.py	Five-factor risk calculation and policy evaluation
+src/simulation/	PR #7 simulation implementation
+src/evaluation/	Existing metrics and confusion matrix utilities
+src/ui/simulation_view.py	Existing simulation dashboard
+
+1.2 Verify model artifacts
+Check the actual presence and compatibility of:
+- IT Random Forest model files.
+- IT preprocessing artifacts.
+- IT Autoencoder weights and threshold, if using that path.
+- OT HAI Autoencoder weights.
+- OT feature schema and threshold.
+- HAI scaler/preprocessing artifacts.
+There is a previously identified issue with the HAI scaler artifact: models/standard_scaler.joblib was reported missing in the dataset documentation. Verify the current repository and training pipeline before using the artifact.
+
+Deliverable: A model and dataset audit report listing available artifacts, missing artifacts, expected feature counts, model versions and compatibility.
+
+Acceptance: No detector is allowed to silently use an incompatible model or an invented default threshold.
+Phase 2 – Dataset preparation and leakage-safe splitting
+Highest research priority
+This phase establishes whether your unseen-attack evaluation is scientifically valid.
+2.1 Prepare IT and OT datasets independently
+IT – IDS2025
+- Identify all attack classes available in the dataset.
+- Identify normal traffic.
+- Verify feature columns and target-label columns.
+- Remove identifiers and labels from model inputs.
+- Check class distribution and missing values.
+OT – HAI
+- Retain the existing 66 ordered process features.
+- Exclude timestamp and attack labels from model input.
+- Verify the existing train/test dataset lineage.
+- Verify the scaler was fitted using training data only.
+- Preserve timestamps and labels separately for evaluation.
+Do not merge IT and OT features into a single training matrix. Their feature schemas and datasets are different.
+2.2 Create three separate data partitions
+Training set
+Model fitting
+
+- Normal samples.
+- Known attack classes.
+- For RF: normal + known attack labels.
+- For AE: normal-only samples.
+
+
+Calibration set
+Threshold setting
+
+- Normal-only validation samples.
+- Used to determine anomaly thresholds.
+- Never use held-out attack samples to tune the threshold.
+
+
+Test set
+Final evaluation
+
+- Normal test samples.
+- Known attack test samples.
+- Held-out unseen attack classes.
+- Ground-truth labels kept separate from inference.
+
+
+2.3 Implement Leave-One-Class-Out (LOCO)
+For every eligible attack class:
+1. Select one attack class as the held-out class.
+2. Remove every sample of that class from training.
+3. Remove it from threshold calibration.
+4. Train the model using the remaining permitted data.
+5. Freeze the model and threshold.
+6. Test using normal traffic and the held-out class.
+7. Evaluate predictions against the hidden ground truth.
+8. Repeat for the next eligible attack class.
+Example:
+Experiment	Training attack classes	Held-out class
+LOCO-01	All except DoS/DDoS	DoS/DDoS
+LOCO-02	All except PortScan	PortScan
+LOCO-03	All except BruteForce	BruteForce
+LOCO-04	All except Botnet ARES	Botnet ARES
+LOCO-05	All except Infiltration	Infiltration
+
+These are experiment examples. Confirm the actual class names and sample counts from the audited datasets before generating the final experiment matrix.
+2.4 Prevent preprocessing leakage
+All fitted preprocessing operations must follow this rule:
+- Fit scaler on training data.
+- Fit imputer on training data.
+- Perform feature selection on training data.
+- Transform calibration and test data using the fitted training artifacts.
+- Never refit using test data.
+Deliverables:
+data/
+└── evaluation/
+    ├── manifests/
+    ├── splits/
+    │   ├── it/
+    │   └── ot/
+    └── metadata/
+
+
+Acceptance criteria:
+- No held-out attack class occurs in training or calibration.
+- Test labels are unavailable to the detector.
+- Feature transformations are fitted on training data only.
+- Every split is reproducible from a saved manifest and seed.
+
+Phase 3 – Strengthen the existing detector implementations
+Goal: Reuse the existing algorithms. Do not introduce an unnecessary new algorithm.
+3.1 IT detector – IDS2025 Random Forest
+Continue using the existing Random Forest implementation.
+
+Its role:
+- Recognize normal traffic.
+- Classify known attack classes.
+- Provide the supervised baseline.
+Important limitation: Random Forest is a closed-set classifier. It can assign an unseen attack to an existing known class or Normal. Its output alone does not establish novelty detection.
+3.2 IT Autoencoder
+Use the existing optional IT Autoencoder path only when:
+- The required weights exist.
+- The exact 79-feature schema is supported.
+- The preprocessing pipeline is compatible.
+- The threshold is calibrated and frozen using normal-only validation data.
+The existing 77-feature path can fall back to Random Forest when the AE artifact is unavailable. Do not present that fallback as Autoencoder-based novelty detection.
+3.3 OT detector – HAI Autoencoder
+Continue using the existing HAI Autoencoder:
+- 66 ordered input features.
+- Reconstruction error calculation.
+- Normal-only threshold calibration.
+- Prediction based on reconstruction error against the frozen threshold.
+The OT detector should not receive the ground-truth attack label during inference.
+3.4 Standardize detector outputs
+Define one consistent output contract for the simulation and evaluation layers.
+
+Example:
+{    "source": "OT",    "detector_name": "HAI Autoencoder",    "prediction": "ANOMALY",    "is_anomaly": True,    "anomaly_score": 0.91,    "threshold": 0.82,    "confidence": None,    "feature_schema_version": "hai-66-v1",    "model_version": "model-version-id"}
+
+
+
+confidence should remain unavailable if the detector does not provide a meaningful calibrated confidence score. Do not manufacture it.
+
+Acceptance: Every detector uses its own documented decision rule. No generic second threshold is applied on top of an already-computed detector decision.
+Phase 4 – Separate inference from ground-truth evaluation
+Critical implementation change
+This is the most important correction to PR #7.
+4.1 Correct the CSV parser
+Current file:
+
+src/simulation/data/csv_parser.py
+
+The current parser can infer a ground-truth label from expected_outcome, and it defaults missing labels to Normal.
+
+Remove both behaviours.
+
+Use separate fields:
+Field	Meaning	Used by
+expected_outcome	Expected Zero-Trust policy verdict	Policy evaluation
+ground_truth_label	Actual dataset attack label	Evaluation only
+telemetry_record_id	Reference to empirical feature row	Telemetry resolver
+prediction	Model-generated result	Evaluation after inference
+
+If a ground-truth label is missing, mark it as unavailable. Do not treat it as Normal.
+4.2 Introduce separate data objects
+Recommended design:
+SimulationEvent
+      |
+      ├── InferencePayload
+      |       ├── source
+      |       ├── telemetry_record_id
+      |       ├── identity/device context
+      |       └── permitted features
+      |
+      └── EvaluationRecord
+              ├── ground_truth_label
+              └── attack_class
+
+
+Suggested new module:
+
+src/evaluation/models.py
+
+The detector should receive only the inference payload.
+
+The evaluator should receive the prediction and the evaluation record after inference is complete.
+4.3 Correct the execution order
+The required execution order is:
+1. Load event
+2. Resolve empirical features
+3. Construct inference payload
+4. Invoke detector
+5. Store prediction
+6. Retrieve evaluation label
+7. Compare prediction with ground truth
+8. Calculate TP / FP / TN / FN
+9. Calculate Zero-Trust risk
+10. Evaluate policy
+11. Persist results
+
+
+The detector must never access the evaluation label.
+
+Acceptance tests:
+- Changing ground_truth_label does not change detector output.
+- Changing expected_outcome does not change detector output.
+- Missing ground truth is not counted as a true negative.
+- Ground truth is not passed to the detector.
+
+Phase 5 – Implement the research evaluation engine
+The existing src/evaluation/metrics.py and confusion_matrix.py provide useful foundations. Extend them rather than duplicating their calculations.
+5.1 Recommended module structure
+src/evaluation/
+├── __init__.py
+├── models.py
+├── dataset_splitter.py
+├── split_manifest.py
+├── threshold_calibrator.py
+├── experiment_config.py
+├── loco_runner.py
+├── prediction_evaluator.py
+├── metrics.py
+├── confusion_matrix.py
+├── distribution_tracker.py
+├── evaluation_report.py
+└── provenance.py
+
+
+5.2 Responsibilities
+Module	Responsibility
+models.py	Prediction, ground-truth and evaluation data models
+dataset_splitter.py	Generate training, calibration and test splits
+split_manifest.py	Record sample IDs and held-out attack class
+threshold_calibrator.py	Calibrate thresholds using normal validation samples
+experiment_config.py	Experiment settings, seed and model configuration
+loco_runner.py	Execute each LOCO experiment
+prediction_evaluator.py	Join predictions with hidden labels
+metrics.py	Classification metric calculations
+confusion_matrix.py	TP, FP, FN, TN and per-class counts
+distribution_tracker.py	Normal and attack score distributions
+evaluation_report.py	Generate experiment summaries
+provenance.py	Hashes, versions and experiment metadata
+
+Also calculate:
+- False Negative Rate (FNR).
+- Per-attack-class recall.
+- Macro F1 where applicable.
+- Normal and attack anomaly-score distributions.
+- Detection latency.
+- Event-level and attack-episode-level metrics where timestamps and labels support them.
+For imbalanced datasets, do not rely on accuracy alone.
+5.4 Handle evaluation edge cases
+Implement explicit handling for:
+- No positive samples.
+- No negative samples.
+- No detector prediction.
+- Missing ground-truth labels.
+- Failed events.
+- Cancelled events.
+- Duplicate sample IDs.
+- Very small held-out attack classes.
+For example, if a test set has no actual attack samples, recall is undefined for that test set. Do not silently report it as a meaningful zero.
+
+Deliverable: A reusable evaluation engine that can evaluate the IT and OT detectors independently and execute repeatable LOCO experiments.
+
+Phase 6 – Integrate the evaluation engine with PR #7 simulation
+Do not discard the existing simulation engine.
+
+Retain:
+- SimulationController
+- EventScheduler
+- SimulationClock
+- DetectionAdapter
+- RiskAdapter
+- PolicyAdapter
+- SimulationStore
+But clearly separate the two workflows.
+Two operating modes
+Mode A – Simulation / Demonstration
+Existing PR #7
+
+- Upload or select a scenario CSV.
+- Replay events chronologically.
+- Invoke existing IT/OT detectors.
+- Calculate Zero-Trust risk.
+- Display policy recommendations.
+- Display measured outcomes only if valid labels are available.
+
+
+Mode B – Research Evaluation
+New workflow
+
+- Select dataset and detector.
+- Select LOCO experiment.
+- Load frozen model and threshold.
+- Execute held-out test samples.
+- Evaluate against hidden labels.
+- Generate reproducible metrics and reports.
+
+
+6.1 Improve the DetectionAdapter
+Current:
+
+src/simulation/integration/detection_adapter.py
+
+Required changes:
+- Validate detector feature schema.
+- Avoid applying generic threshold logic after the detector has made its decision.
+- Return the original detector decision and its metadata.
+- Distinguish supervised class prediction from anomaly detection.
+- Record the detector/model version.
+- Fail clearly if the model or required preprocessing artifacts are missing.
+6.2 Improve the TelemetryResolver
+Current:
+
+src/simulation/data/telemetry_resolver.py
+
+The current implementation dynamically drops selected columns and treats the remaining columns as features. This is not sufficiently safe.
+
+Required:
+1. Obtain the exact ordered feature schema from the selected detector.
+2. Validate column names.
+3. Validate feature count.
+4. Validate numeric values and reject NaN/Infinity.
+5. Validate preprocessing compatibility.
+6. Return features in the detector's required order.
+7. Reject incompatible telemetry records.
+Also ensure that record IDs cannot accidentally point to different rows after a dataset is reordered.
+6.3 Improve controller lifecycle
+Current:
+
+src/simulation/engine/controller.py
+
+Implement an explicit state-transition policy.
+Current state	Allowed operation	New state
+READY	Start	RUNNING
+RUNNING	Pause	PAUSED
+PAUSED	Resume	RUNNING
+RUNNING	Stop	STOPPED
+PAUSED	Stop	STOPPED
+STOPPED	Restart	READY
+RUNNING	All events completed	COMPLETED
+
+Do not restart an old scheduler by simply calling Start again.
+6.4 Improve persistence
+Current:
+
+src/simulation/persistence/simulation_store.py
+
+Implement:
+- Run status persistence.
+- Interrupted-run detection.
+- Atomic JSON writes.
+- Unique upload filenames.
+- Run metadata validation.
+- Configurable retention of generated runs.
+- Separation of scenario fixtures and generated results.
+For the first iteration, it is safer to mark unfinished runs as INTERRUPTED after a server restart rather than attempting to resume a partially processed scheduler without complete recovery information.
+Phase 7 – Integrate Zero-Trust evaluation correctly
+The existing five-factor risk engine should remain the authoritative risk calculation implementation.
+
+Current file:
+
+src/zero_trust/risk_engine.py
+
+Existing risk factors:
+Factor	Weight
+Behaviour deviation	0.30
+Anomaly severity	0.25
+Asset criticality	0.20
+Identity untrust	0.15
+Device untrust	0.10
+Total	1.00
+
+7.1 Keep detection and Zero-Trust separate
+These are different questions:
+- Intrusion detection: Is this event anomalous?
+- Zero-Trust assessment: Given the identity, device, asset and behaviour, what should the system recommend?
+An event can be anomalous but receive a different policy recommendation depending on its context.
+7.2 Required execution flow
+Detector
+   |
+   ├── Normal / Anomaly
+   |
+   └── Anomaly severity
+            |
+            v
+      Five-factor Risk Engine
+            |
+            v
+      Zero-Trust Policy Engine
+            |
+            v
+      ALLOW / REQUIRE VERIFICATION / DENY
+
+
+7.3 Separate reporting
+Do not use policy verdicts as attack-detection ground truth.
+
+Report these independently:
+
+Detection metrics
+- Precision
+- Recall
+- F1
+- FPR
+- FN
+- TP
+Zero-Trust metrics
+- Risk-score distribution.
+- ALLOW / REQUIRE VERIFICATION / DENY distribution.
+- Policy decision agreement with expected policy outcomes, where such expectations are independently defined.
+- Risk-factor contribution analysis.
+All policy actions must remain advisory in the simulation. No real industrial control action should be triggered.
+
+Phase 8 – Improve the dashboard
+Current file:
+
+src/ui/simulation_view.py
+
+Do not replace the whole interface. Add a separate research evaluation section while preserving the existing simulation screen.
+
+ResiNet-IDAM Research Dashboard
+1. Experiment overview
+New
+
+Experiment
+
+LOCO-04
+
+Held-out class
+
+Botnet ARES
+
+Dataset
+
+IDS2025
+
+Detector
+
+Existing IT model
+
+
+
+2. Detection performance
+Precision
+
+Measured
+
+Recall
+
+Measured
+
+F1-score
+
+Measured
+
+FPR
+
+Measured
+
+
+Values must be populated from the selected completed experiment, not preset values.
+3. Confusion matrix
+TP
+
+Detected attacks
+
+FP
+
+False alarms
+
+FN
+
+Missed attacks
+
+TN
+
+Correct normal events
+
+
+
+4. Additional analysis
+- Per-class attack recall.
+- Anomaly-score distribution.
+- Detection latency.
+- Risk-score distribution.
+- Zero-Trust policy distribution.
+  
+  5. Experiment provenance
+- Dataset hash.
+- Model hash.
+- Threshold.
+- Feature schema version.
+- Split manifest.
+- Execution timestamp.
+
+Dashboard pages to implement
+Page	Purpose
+Simulation	Existing event playback
+Research Experiments	Configure and run LOCO experiments
+Model Evaluation	Compare detector results
+Attack Analysis	Per-class detection and missed attacks
+Zero-Trust Analysis	Risk and policy outcomes
+Run History	Previous experiment records
+Reports	Export evaluation reports
+
+Important UI rule: When no completed evaluation exists, show — or Not evaluated. Remove the hardcoded fallback metric values and illustrative confusion matrix from the live results view.
+
+Phase 9 – Reproducibility and report generation
+A research result should be reproducible, not merely displayed.
+9.1 Save experiment metadata
+Every experiment should store:
+{
+  "experiment_id": "LOCO-04",
+  "dataset_name": "IDS2025",
+  "held_out_class": "Botnet ARES",
+  "random_seed": 42,
+  "model_name": "Existing IT detector",
+  "model_hash": "...",
+  "dataset_hash": "...",
+  "split_manifest_hash": "...",
+  "feature_schema_version": "...",
+  "threshold": 0.0,
+  "training_sample_count": 0,
+  "calibration_sample_count": 0,
+  "test_sample_count": 0,
+  "completed_at": "..."
+}
+
+
+These are schema examples, not actual experimental results. The real values must be populated by the experiment runner.
+9.2 Report formats
+Generate:
+- JSON: complete experiment metadata and predictions.
+- CSV: per-sample prediction results.
+- PDF: concise experiment report with metrics, charts and methodology.
+- Optional comparison report: IT versus OT and detector-wise performance.
+9.3 Suggested storage structure
+data/
+└── evaluation/
+    ├── manifests/
+    ├── experiments/
+    │   ├── it/
+    │   └── ot/
+    ├── predictions/
+    └── reports/
+
+data/
+└── simulation/
+    ├── scenarios/
+    ├── runs/
+    ├── uploads/
+    └── reports/
+
+
+Keep generated experiment artifacts separate from source-controlled scenario fixtures.
+
+Use .gitignore for generated runs, uploads, caches and temporary reports. Do not commit sensitive records or large runtime files.
+Phase 10 – Testing and verification
+Testing must cover both the individual components and the complete research workflow.
+10.1 Unit tests
+Test	Expected result
+Dataset split	No held-out class in training
+Threshold calibration	Only normal validation data used
+Feature schema	Exact feature names and ordering
+Ground-truth isolation	Labels never passed to detector
+Prediction evaluation	Correct TP, FP, FN, TN
+Metrics	Correct precision, recall, F1 and FPR
+Missing labels	Excluded from binary metrics and reported
+Model loading	Missing artifacts produce clear errors
+Risk calculation	Existing five-factor weights preserved
+Policy evaluation	Correct policy verdict and advisory boundary
+
+10.2 Integration tests
+Test the complete paths:
+1. IDS2025 → IT detector → evaluator.
+2. HAI → OT Autoencoder → evaluator.
+3. IT + OT simulation → DetectionService.
+4. Detection result → RiskAdapter → PolicyAdapter.
+5. Experiment → stored results → dashboard.
+6. Stored results → CSV/JSON/PDF report.
+10.3 Scientific integrity tests
+These tests are particularly important:
+Test	What it proves
+Modify test labels after inference	Predictions remain unchanged
+Change expected policy outcome	Detection metrics remain unchanged
+Remove held-out attack class from training	LOCO separation works
+Modify test feature values	Predictions can change, labels cannot
+Re-run same experiment and seed	Same split and reproducible results
+Compare saved report with dashboard	Metrics reconcile exactly
+
+10.4 Performance tests
+Measure:
+- Average inference latency.
+- 95th percentile inference latency.
+- Events processed per second.
+- Memory consumption.
+- Dataset loading time.
+- Experiment execution time.
+Do not confuse simulation dispatch jitter with actual detector inference latency. Report them separately.
+
+Acceptance: All tests pass, and the same experiment configuration produces consistent split assignments and results under the same software and artifact versions.
+
+Phase 11 – Final experiment matrix
+Once the implementation is complete, run these experiments.
+ID	Experiment	Purpose
+E1	IT Random Forest baseline	Known-class supervised performance
+E2	IT Autoencoder	IT novelty detection, if supported
+E3	OT HAI Autoencoder	OT novelty detection
+E4	IT LOCO	Unseen IT attack-class generalization
+E5	OT held-out evaluation	Unseen OT attack evaluation, if classes support it
+E6	IT and OT independent comparison	Compare domain-specific performance
+E7	Zero-Trust policy evaluation	Contextual risk and policy behaviour
+E8	Ablation study	Evaluate the contribution of selected components
+E9	Robustness and performance	Latency, stability and sensitivity
+
+Critical experimental rules
+- Do not mix IT and OT performance into one score without a clearly defined fusion experiment.
+- Do not claim a real-world zero-day detection capability from synthetic held-out-class evaluation.
+- Report the number of samples in every test class.
+- Clearly disclose small sample sizes.
+- Include missed attacks, not just detected attacks.
+- Use confidence intervals where the sample size supports meaningful estimates.
+- Keep the historical baseline results separate from newly measured results.
+Phase 12 – Deployment and demonstration
+The intended deployment remains a local laptop demonstration.
+Final demonstration sequence
+1. Show dataset preparation
+   
+   Explain the IDS2025 and HAI datasets, feature schemas and data splits.
+2. Show model training and calibration
+   
+   Demonstrate known attack training and normal-only threshold calibration.
+3. Run a LOCO experiment
+   
+   Select an attack class excluded from training and calibration.
+4. Show inference
+   
+   Demonstrate that the detector predicts without seeing ground-truth labels.
+5. Reveal evaluation results
+   
+   Compare predictions with labels and display TP, FP, FN, TN, precision, recall and F1.
+6. Demonstrate Zero-Trust
+   
+   Show how identity, device, asset and behaviour affect risk and policy recommendations.
+7. Export the report
+   
+   Demonstrate the saved model/dataset metadata, experiment configuration and evaluation report.
+
+Complete proposed development structure
+This is the target structure after implementation. Existing files should be extended where possible; the new modules should be added only where the responsibility does not already exist.
+ResiNet-IDAM/
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   ├── evaluation/
+│   │   ├── manifests/
+│   │   ├── splits/
+│   │   ├── experiments/
+│   │   ├── predictions/
+│   │   └── reports/
+│   └── simulation/
+│       ├── scenarios/
+│       ├── runs/
+│       ├── uploads/
+│       └── reports/
+│
+├── models/
+│   ├── it_realistic/
+│   ├── it_autoencoder/
+│   └── ot_autoencoder/
+│
+├── src/
+│   ├── application/
+│   │   └── detection_service.py
+│   │
+│   ├── detectors/
+│   │   ├── ids2025.py
+│   │   └── hai_autoencoder.py
+│   │
+│   ├── evaluation/
+│   │   ├── models.py
+│   │   ├── dataset_splitter.py
+│   │   ├── split_manifest.py
+│   │   ├── threshold_calibrator.py
+│   │   ├── experiment_config.py
+│   │   ├── loco_runner.py
+│   │   ├── prediction_evaluator.py
+│   │   ├── metrics.py
+│   │   ├── confusion_matrix.py
+│   │   ├── distribution_tracker.py
+│   │   ├── evaluation_report.py
+│   │   └── provenance.py
+│   │
+│   ├── simulation/
+│   │   ├── data/
+│   │   ├── engine/
+│   │   ├── integration/
+│   │   ├── models/
+│   │   ├── persistence/
+│   │   └── reporting/
+│   │
+│   ├── zero_trust/
+│   │
+│   └── ui/
+│       ├── simulation_view.py
+│       ├── research_view.py
+│       ├── model_evaluation_view.py
+│       ├── attack_analysis_view.py
+│       ├── zero_trust_view.py
+│       └── reports_view.py
+│
+├── tests/
+│   ├── evaluation/
+│   ├── detectors/
+│   ├── simulation/
+│   ├── zero_trust/
+│   └── integration/
+│
+├── docs/
+│   ├── dataset-report.md
+│   ├── model-evaluation.md
+│   ├── implementation-plan.md
+│   └── experiment-protocol.md
+│
+└── app.py
+
+
+This is a proposed target layout, not a claim that every listed directory or file already exists.
+Implementation priority and execution order
+Do not ask the team to implement all phases simultaneously. Follow this sequence to avoid breaking the existing application.
+Sprint	Work	Completion milestone
+Sprint 1	Repository audit, artifact verification, dataset lineage	Verified baseline
+Sprint 2	Dataset preparation, splitting and LOCO manifests	Leakage-safe datasets
+Sprint 3	Detector contracts, feature-schema validation and threshold calibration	Reliable inference
+Sprint 4	Ground-truth isolation and evaluation engine	Scientifically valid metrics
+Sprint 5	Simulation integration and Zero-Trust separation	Integrated execution
+Sprint 6	Dashboard, persistence and reports	Complete application workflow
+Sprint 7	Testing, reproducibility and final demonstration	Verified research prototype
+
+Final acceptance checklist
+Project implementation progress
+0%
+
+
+
+0 of 14 milestones verified
+[ ] Dataset lineage and model artifacts verified
+
+Sprint 1
+
+
+[ ] IT and OT datasets prepared independently
+
+Sprint 2
+
+
+[ ] Training, calibration and test splits generated
+
+Sprint 2
+
+
+[ ] LOCO manifests created and validated
+
+Sprint 2
+
+
+[ ] Existing detector schemas enforced
+
+Sprint 3
+
+
+[ ] Normal-only threshold calibration implemented
+
+Sprint 3
+
+
+[ ] Ground truth isolated from inference
+
+Sprint 4
+
+
+[ ] Evaluation metrics verified against test cases
+
+Sprint 4
+
+
+[ ] Simulation lifecycle and persistence corrected
+
+Sprint 5
+
+
+[ ] Zero-Trust evaluation separated from detection
+
+Sprint 5
+
+
+[ ] Dashboard uses actual experiment results
+
+Sprint 6
+
+
+[ ] Reports contain reproducibility metadata
+
+Sprint 6
+
+
+[ ] Full integration and regression tests pass
+
+Sprint 7
+
+
+[ ] Final demonstration completed
+
+Sprint 7
+
+
+
+My strongest recommendation
+Build the project around three clearly separated layers:
+1. Detection layer: Existing IDS2025 and HAI algorithms identify anomalies.
+2. Evaluation layer: Measures whether the detector correctly identified attacks, including unseen attack classes.
+3. Zero-Trust layer: Uses identity, device, asset and behavioural context to recommend access decisions.

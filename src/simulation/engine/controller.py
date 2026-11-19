@@ -97,7 +97,7 @@ class SimulationController:
     def start(self) -> None:
         if self.current_run is None or self.scheduler is None:
             raise RuntimeError("No scenario loaded to start")
-        if self.current_run.state in (RunState.RUNNING, RunState.COMPLETED):
+        if self.current_run.state in (RunState.RUNNING, RunState.COMPLETED, RunState.STOPPED):
             return
 
         self.clock.start()
