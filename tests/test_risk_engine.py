@@ -158,6 +158,32 @@ class TestRiskEngine(unittest.TestCase):
         self.assertEqual(dec_85["action"], "REVOKE_AND_ISOLATE")
         self.assertFalse(dec_85["is_automatic_action"])
 
+    def test_contextual_fallback_triggers_containment(self):
+        from src.zero_trust.risk_engine import evaluate_zero_trust_decision
+
+        risk = calculate_risk(
+            context(
+                identity_trust=0.35,
+                device_trust=0.35,
+                behavior_deviation=0.70,
+                anomaly_severity=0.10,
+                asset_criticality=0.10,
+            )
+        )
+        self.assertEqual(risk["risk_level"], "CRITICAL")
+        self.assertEqual(risk["recommended_action"], "RECOMMEND_CONTAINMENT")
+
+        decision = evaluate_zero_trust_decision(
+            {
+                "context": risk["inputs"],
+                "risk_score": risk["risk_score"],
+            }
+        )
+        self.assertEqual(decision["verdict"], "DENY")
+        self.assertEqual(decision["action"], "REVOKE_AND_ISOLATE")
+        self.assertFalse(decision["is_automatic_action"])
+        self.assertTrue(any(r["Rule"].startswith("R4:") for r in decision["rule_traces"]))
+
 
 if __name__ == "__main__":
     unittest.main()

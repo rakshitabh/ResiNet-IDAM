@@ -76,6 +76,12 @@ def calculate_risk(data: RiskInput) -> dict[str, Any]:
     }
     risk_score = round(100.0 * sum(components.values()), 2)
     risk_level, recommended_action = _severity(risk_score)
+    if (
+        data.identity_trust <= 0.35
+        and data.device_trust <= 0.35
+        and data.behavior_deviation >= 0.70
+    ):
+        risk_level, recommended_action = "CRITICAL", "RECOMMEND_CONTAINMENT"
 
     return {
         "identity_id": data.identity_id,
@@ -156,13 +162,32 @@ def evaluate_zero_trust_decision(event: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
+    contextual_fallback = (
+        identity_trust <= 0.35
+        and device_trust <= 0.35
+        and behavior_deviation >= 0.70
+    )
+    if contextual_fallback:
+        rule_traces.append(
+            {
+                "Rule": "R4: Contextual trust-behavior fallback",
+                "Condition": "identity_trust <= 0.35 and device_trust <= 0.35 and behavior_deviation >= 0.70",
+                "Evaluated": (
+                    f"identity={identity_trust:.2f}, "
+                    f"device={device_trust:.2f}, "
+                    f"behavior={behavior_deviation:.2f}"
+                ),
+                "Result": "TRIGGERED",
+            }
+        )
+
     if (
         anomaly_severity >= 0.80
         and behavior_deviation >= 0.65
         and asset_criticality >= 0.60
     ) or (
         identity_trust < 0.40 and device_trust < 0.40 and risk_score >= 60
-    ) or risk_score >= 85:
+    ) or contextual_fallback or risk_score >= 85:
         verdict = "DENY"
         action = "REVOKE_AND_ISOLATE"
         reason = (
